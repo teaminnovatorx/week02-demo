@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UDARA — AMR Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   UDARA — BioLume Command Center
+   ═══════════════════════════════════════════════ */
+
+:root {
+  --bg-deep: #05080F;
+  --bg-primary: #080D1A;
+  --bg-elevated: rgba(12, 20, 40, 0.72);
+  --bg-glass: rgba(10, 16, 32, 0.55);
+  --border: rgba(0, 216, 255, 0.06);
+  --border-hover: rgba(0, 216, 255, 0.18);
+  --border-active: rgba(0, 216, 255, 0.35);
+  --cyan: #00D8FF;
+  --cyan-dim: rgba(0, 216, 255, 0.08);
+  --cyan-glow: rgba(0, 216, 255, 0.15);
+  --emerald: #2DD4BF;
+  --emerald-dim: rgba(45, 212, 191, 0.08);
+  --emerald-glow: rgba(45, 212, 191, 0.12);
+  --amber: #F59E0B;
+  --amber-dim: rgba(245, 158, 11, 0.08);
+  --coral: #F97316;
+  --red: #EF4444;
+  --red-dim: rgba(239, 68, 68, 0.08);
+  --purple: #A78BFA;
+  --purple-dim: rgba(167, 139, 250, 0.08);
+  --text: #EEF0F4;
+  --text-dim: #949BA8;
+  --text-muted: #5A6170;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ═══ AMBIENT BACKGROUND ═══ */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 30%, rgba(0, 216, 255, 0.025) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 20% 70%, rgba(45, 212, 191, 0.015) 0%, transparent 50%),
+    radial-gradient(ellipse 30% 30% at 80% 80%, rgba(167, 139, 250, 0.01) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Grid overlay */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 216, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 216, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+
+
+/* ═══ NOISE OVERLAY ═══ */
+.noise-overlay {
+  position: fixed; inset: 0; z-index: 2;
+  pointer-events: none; opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat; background-size: 256px 256px;
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════ */
+
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; height: 64px;
+  background: linear-gradient(180deg, rgba(5, 8, 15, 0.95) 0%, rgba(5, 8, 15, 0.7) 60%, transparent 100%);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+
+.header-left { display: flex; align-items: center; gap: 12px; }
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text);
+}
+
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--cyan), var(--emerald));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bg-deep); font-size: 13px; font-weight: 800;
+  font-family: var(--font-display); position: relative;
+}
+
+.logo-icon::after {
+  content: ''; position: absolute; inset: -2px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--cyan), transparent, var(--emerald));
+  opacity: 0.3; z-index: -1;
+}
+
+.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; font-family: var(--font-display); }
+.logo-sup {
+  font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+  background: var(--cyan-dim); color: var(--cyan);
+  border: 1px solid var(--border); letter-spacing: 0.3px;
+  margin-left: 4px;
+}
+
+.status-badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  font-size: 10px; font-weight: 600; color: var(--success);
+  letter-spacing: 0.3px; text-transform: uppercase;
+}
+
+.status-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--success);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot { 0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--success); } 50% { opacity: 0.3; box-shadow: 0 0 0px var(--success); } }
+
+.header-right {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.header-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-glass); border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 11px; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer;
+  text-decoration: none; transition: var(--transition);
+}
+
+.header-btn:hover {
+  border-color: var(--border-hover); color: var(--text);
+  background: var(--bg-elevated);
+}
+
+.header-btn-primary {
+  background: linear-gradient(135deg, var(--cyan), var(--emerald));
+  border-color: transparent; color: var(--bg-deep);
+  font-weight: 700;
+}
+
+.header-btn-primary:hover {
+  background: linear-gradient(135deg, #33E0FF, #4DD8C4);
+  color: var(--bg-deep); border-color: transparent;
+}
+
+.header-time {
+  font-size: 11px; color: var(--text-muted);
+  font-family: var(--font-mono); font-weight: 500;
+  padding: 0 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   HERO STATS
+   ═══════════════════════════════════════════════ */
+
+.hero-stats {
+  position: relative; z-index: 10;
+  padding: 82px 24px 0; max-width: 1440px; margin: 0 auto;
+}
+
+.stats-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.stat-card {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  transition: var(--transition);
+  cursor: default; overflow: hidden;
+}
+
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hover), transparent);
+  opacity: 0; transition: var(--transition);
+}
+
+.stat-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-elevated);
+  transform: translateY(-1px);
+}
+
+.stat-card:hover::before { opacity: 1; }
+
+.stat-card .stat-glow {
+  position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
+  border-radius: 50%;
+  opacity: 0; transition: var(--transition);
+  pointer-events: none;
+}
+
+.stat-card:hover .stat-glow { opacity: 0.08; }
+
+.stat-label {
+  font-size: 9px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.5px; line-height: 1.1;
+  transition: var(--transition);
+}
+
+.stat-change {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600; margin-top: 4px;
+  padding: 1px 6px; border-radius: 3px;
+}
+
+.stat-change.up { color: var(--success); background: rgba(34, 197, 94, 0.08); }
+.stat-change.down { color: var(--red); background: rgba(239, 68, 68, 0.08); }
+.stat-change.neutral { color: var(--text-muted); background: rgba(90, 97, 112, 0.08); }
+
+/* ═══════════════════════════════════════════════
+   MAIN CONTENT
+   ═══════════════════════════════════════════════ */
+
+.main-content {
+  position: relative; z-index: 10;
+  padding: 14px 24px 80px;
+  max-width: 1440px; margin: 0 auto;
+}
+
+.content-grid {
+  display: grid; grid-template-columns: 1.5fr 1fr;
+  gap: 12px; margin-bottom: 14px;
+}
+
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.glass-panel:hover { border-color: var(--border-hover); }
+
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; color: var(--text);
+  letter-spacing: 0.2px; text-transform: uppercase;
+}
+
+.panel-badge {
+  font-size: 9px; font-weight: 600;
+  padding: 3px 9px; border-radius: 12px;
+  background: var(--cyan-dim); color: var(--cyan);
+  border: 1px solid var(--border);
+}
+
+.panel-body { padding: 4px 0; }
+
+/* ═══ Map Panel ═══ */
+.map-panel { position: relative; min-height: 440px; }
+.map-panel .panel-body { padding: 0; height: 420px; position: relative; overflow: visible !important; }
+.map-panel svg { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+.map-legend {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 14px; align-items: center;
+  padding: 6px 16px;
+  background: rgba(5, 8, 15, 0.75);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: 20px;
+  font-size: 9px; color: var(--text-dim); font-weight: 500;
+  z-index: 5;
+}
+
+.map-tooltip {
+  position: fixed; z-index: 9999;
+  background: rgba(8, 13, 26, 0.94);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 216, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.6;
+  min-width: 180px;
+  max-width: 240px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  display: none;
+}
+
+.tip-header {
+  font-size: 15px; font-weight: 700;
+  font-family: var(--font-display);
+  margin-bottom: 1px;
+}
+
+.tip-region {
+  color: var(--text-muted);
+  font-size: 9px; font-weight: 500;
+  letter-spacing: 0.3px; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.tip-divider {
+  border: none; border-top: 1px solid rgba(0, 216, 255, 0.06);
+  margin: 5px 0;
+}
+
+.tip-stat {
+  display: flex; justify-content: space-between;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.tip-drug {
+  display: flex; justify-content: space-between;
+  gap: 12px; font-size: 10px;
+}
+
+.tip-drugs-label {
+  color: var(--text-muted);
+  font-size: 8px; text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+.pulse-ring {
+  transform-origin: center;
+  animation: pulse-ring 2.5s ease-out infinite;
+}
+
+.map-zoom-hint {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  padding: 4px 10px;
+  background: rgba(5, 8, 15, 0.6);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 8px; color: var(--text-muted);
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+
+/* ═══ Alerts Panel ═══ */
+.alerts-panel { max-height: 280px; overflow: hidden; display: flex; flex-direction: column; }
+.alerts-panel .panel-body { flex: 1; overflow-y: auto; }
+
+.alert-item {
+  display: flex; gap: 10px;
+  padding: 11px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.015);
+  transition: var(--transition); cursor: pointer;
+}
+
+.alert-item:last-child { border-bottom: none; }
+.alert-item:hover { background: rgba(0, 216, 255, 0.015); }
+
+.alert-severity-indicator {
+  width: 3px; border-radius: 2px; flex-shrink: 0;
+}
+
+.alert-content { flex: 1; min-width: 0; }
+
+.alert-title {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  line-height: 1.3; margin-bottom: 2px;
+}
+
+.alert-message {
+  font-size: 11px; color: var(--text-dim);
+  line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.alert-meta {
+  font-size: 9px; color: var(--text-muted);
+  margin-top: 4px; font-family: var(--font-mono);
+}
+
+/* ═══ Resistance Panel ═══ */
+.resistance-panel { max-height: 280px; overflow: hidden; display: flex; flex-direction: column; }
+.resistance-panel .panel-body { flex: 1; overflow-y: auto; }
+
+.drug-item {
+  display: grid; grid-template-columns: 80px 1fr 36px;
+  align-items: center; gap: 10px;
+  padding: 8px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.01);
+  transition: var(--transition);
+}
+
+.drug-item:last-child { border-bottom: none; }
+.drug-item:hover { background: rgba(0, 216, 255, 0.01); }
+
+.drug-label { font-size: 11px; font-weight: 500; color: var(--text-dim); }
+
+.drug-bar-track {
+  height: 5px; background: rgba(255,255,255,0.03);
+  border-radius: 3px; overflow: hidden;
+}
+
+.drug-bar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.drug-bar-fill::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08));
+}
+
+.drug-pct {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════
+   TRENDS SECTION
+   ═══════════════════════════════════════════════ */
+
+.trends-section { margin-bottom: 14px; }
+
+.trends-controls {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.trend-select {
+  padding: 5px 10px; border-radius: var(--radius-sm);
+  background: var(--bg-glass); border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 10px; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer;
+  outline: none; transition: var(--transition);
+}
+
+.trend-select:hover, .trend-select:focus { border-color: var(--border-hover); color: var(--text); }
+
+.chart-wrapper {
+  padding: 10px 18px 14px;
+  height: 200px;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════
+   CASES SECTION
+   ═══════════════════════════════════════════════ */
+
+.cases-section { margin-bottom: 14px; }
+
+.cases-table {
+  width: 100%;
+}
+
+.cases-table th {
+  text-align: left;
+  padding: 10px 18px;
+  font-size: 9px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.cases-table td {
+  padding: 9px 18px;
+  font-size: 11px; color: var(--text-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.015);
+  white-space: nowrap;
+}
+
+.cases-table tr:last-child td { border-bottom: none; }
+.cases-table tr { transition: var(--transition); cursor: pointer; }
+.cases-table tr:hover { background: rgba(0, 216, 255, 0.015); }
+
+.source-badge {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 8px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.source-badge.telegram { background: rgba(0, 216, 255, 0.1); color: var(--cyan); }
+.source-badge.whatsapp { background: rgba(45, 212, 191, 0.1); color: var(--emerald); }
+.source-badge.ussd { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
+.source-badge.sms { background: rgba(148, 155, 168, 0.1); color: var(--text-dim); }
+.source-badge.manual { background: rgba(167, 139, 250, 0.1); color: var(--purple); }
+
+.district-tag {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 4px;
+  background: rgba(90, 97, 112, 0.08);
+  color: var(--text-muted); font-size: 9px; font-weight: 500;
+}
+
+.case-id {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);
+}
+
+.severity-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 600;
+}
+
+.severity-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+}
+
+.time-ago { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+
+/* ═══════════════════════════════════════════════
+   FOOTER — LIVE BAR
+   ═══════════════════════════════════════════════ */
+
+.footer-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 24px;
+  background: linear-gradient(0deg, rgba(5, 8, 15, 0.95) 0%, rgba(5, 8, 15, 0.7) 60%, transparent 100%);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
+
+.footer-left {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.footer-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--text-muted); font-weight: 500;
+}
+
+.footer-counter {
+  font-size: 10px; color: var(--text-dim);
+}
+
+.footer-counter strong { color: var(--text); font-weight: 600; }
+
+.footer-right {
+  display: flex; align-items: center; gap: 16px;
+  font-size: 9px; color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.footer-updated {
+  font-size: 10px; color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════
+   UTILITY
+   ═══════════════════════════════════════════════ */
+
+.loading-skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-glass) 25%,
+    rgba(255,255,255,0.02) 50%,
+    var(--bg-glass) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.empty-state {
+  padding: 24px 18px; text-align: center;
+  font-size: 11px; color: var(--text-muted);
+}
+
+.no-select { user-select: none; }
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(0, 216, 255, 0.1); }
+  50% { box-shadow: 0 0 16px rgba(0, 216, 255, 0.2); }
+}
+
+.animate-in { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-in-d1 { animation-delay: 0.05s; }
+.animate-in-d2 { animation-delay: 0.1s; }
+.animate-in-d3 { animation-delay: 0.15s; }
+.animate-in-d4 { animation-delay: 0.2s; }
+.animate-in-d5 { animation-delay: 0.25s; }
+.animate-in-d6 { animation-delay: 0.3s; }
+.animate-in-d7 { animation-delay: 0.35s; }
+.animate-in-d8 { animation-delay: 0.4s; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .content-grid { grid-template-columns: 1.1fr 1fr; }
+  .stats-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .stat-card { padding: 12px 16px; }
+  .stat-value { font-size: 24px; }
+}
+
+@media (max-width: 992px) {
+  .content-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .stat-card:nth-child(4) { display: none; }
+  .stat-card:nth-child(5) { display: none; }
+}    @media (max-width: 768px) {
+  .header { padding: 10px 16px; height: 56px; }
+  .hero-stats { padding: 72px 12px 0; }
+  .main-content { padding: 10px 12px 70px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .stat-card:nth-child(3) { display: none; }
+  .stat-value { font-size: 22px; }
+  .logo-text { font-size: 15px; }
+  .status-badge { padding: 3px 8px; font-size: 8px; }
+  .header-btn { padding: 5px 10px; font-size: 9px; }
+  .header-time { display: none; }
+  .map-panel { min-height: 300px; }
+  .map-panel .panel-body { height: 300px; }
+  .chart-wrapper { height: 160px; }
+  .cases-table th, .cases-table td { padding: 8px 12px; font-size: 10px; }
+  .cases-table .hide-mobile { display: none; }
+  .alerts-panel { max-height: 200px; }
+  .resistance-panel { max-height: 200px; }
+  .footer-bar { padding: 8px 12px; flex-direction: column; gap: 4px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-value { font-size: 20px; }
+  .stat-card { padding: 10px 12px; }
+  .stat-label { font-size: 8px; }
+  .header-right .header-btn:not(.header-btn-primary) { display: none; }
+  .panel-body { padding: 0; }
+  .map-legend { font-size: 7px; gap: 8px; padding: 4px 10px; }
+  .map-zoom-hint { display: none; }
+  .alerts-panel { max-height: 180px; }
+  .resistance-panel { max-height: 180px; }
+}
+
+/* ═══ Transitions for smooth data updates ═══ */
+.stat-value.loading { opacity: 0.3; }
+</style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header" role="banner">
+  <div class="header-left">
+    <a href="#" class="logo" aria-label="UDARA Home">
+      <div class="logo-icon">U</div>
+      <span class="logo-text">UDARA <span class="logo-sup">v2.0</span></span>
+    </a>
+    <div class="status-badge" id="status-badge">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">LIVE</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="header-time" id="header-time">--:--:-- UTC</span>
+    <a href="https://t.me/UdaraBot" target="_blank" class="header-btn" rel="noopener">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+      Telegram
+    </a>
+    <button class="header-btn" onclick="window.location.reload()" title="Refresh data">Refresh</button>
+    <a href="/docs" class="header-btn header-btn-primary" target="_blank">API</a>
+  </div>
+</header>
+
+<!-- ═══ HERO STATS ═══ -->
+<section class="hero-stats" aria-label="Key metrics">
+  <div class="stats-grid">
+    <div class="stat-card animate-in animate-in-d1" id="stat-total">
+      <div class="stat-glow" style="background: radial-gradient(circle, var(--cyan), transparent);"></div>
+      <div class="stat-label">Total Cases</div>
+      <div class="stat-value" id="val-cases" style="color: var(--cyan);">—</div>
+      <div class="stat-change" id="change-cases"></div>
+    </div>
+    <div class="stat-card animate-in animate-in-d2" id="stat-alerts">
+      <div class="stat-glow" style="background: radial-gradient(circle, var(--coral), transparent);"></div>
+      <div class="stat-label">Active Alerts</div>
+      <div class="stat-value" id="val-alerts" style="color: var(--coral);">—</div>
+      <div class="stat-change" id="change-alerts"></div>
+    </div>
+    <div class="stat-card animate-in animate-in-d3" id="stat-resistance">
+      <div class="stat-glow" style="background: radial-gradient(circle, var(--amber), transparent);"></div>
+      <div class="stat-label">Avg Resistance</div>
+      <div class="stat-value" id="val-resistance" style="color: var(--amber);">—%</div>
+      <div class="stat-change" id="change-resistance"></div>
+    </div>
+    <div class="stat-card animate-in animate-in-d4" id="stat-districts">
+      <div class="stat-glow" style="background: radial-gradient(circle, var(--emerald), transparent);"></div>
+      <div class="stat-label">Districts</div>
+      <div class="stat-value" id="val-districts" style="color: var(--emerald);">—</div>
+      <div class="stat-change" id="change-districts"></div>
+    </div>
+    <div class="stat-card animate-in animate-in-d5" id="stat-week">
+      <div class="stat-glow" style="background: radial-gradient(circle, var(--purple), transparent);"></div>
+      <div class="stat-label">This Week</div>
+      <div class="stat-value" id="val-week" style="color: var(--purple);">—</div>
+      <div class="stat-change" id="change-week"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="main-content" role="main">
+
+  <!-- Content Grid: Globe + Alerts/Resistance -->
+  <div class="content-grid">
+
+    <!-- LEFT: Map -->
+    <div class="glass-panel map-panel animate-in animate-in-d6">
+      <div class="panel-header">
+        <span class="panel-title">Resistance Map</span>
+        <span class="panel-badge" id="globe-badge">— districts</span>
+      </div>
+      <div class="panel-body" id="globe-body">
+        <div class="map-legend">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#EF4444;"></span> &gt;50%</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#F59E0B;"></span> 25–50%</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00D8FF;"></span> 10–25%</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#2DD4BF;"></span> &lt;10%</span>
+        </div>
+        <div class="map-zoom-hint">Scroll · Drag · Hover</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Stacked panels -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+
+      <!-- Alerts Panel -->
+      <div class="glass-panel alerts-panel animate-in animate-in-d7">
+        <div class="panel-header">
+          <span class="panel-title">Alerts</span>
+          <span class="panel-badge" id="alerts-badge">— active</span>
+        </div>
+        <div class="panel-body" id="alerts-body">
+          <div class="empty-state">Loading alerts…</div>
+        </div>
+      </div>
+
+      <!-- Drug Resistance Panel -->
+      <div class="glass-panel resistance-panel animate-in animate-in-d8">
+        <div class="panel-header">
+          <span class="panel-title">Drug Resistance</span>
+          <span class="panel-badge" id="drugs-badge">— drugs</span>
+        </div>
+        <div class="panel-body" id="drugs-body">
+          <div class="empty-state">Loading resistance data…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Trends Section -->
+  <div class="glass-panel trends-section animate-in animate-in-d2" id="trends-panel">
+    <div class="panel-header">
+      <span class="panel-title">Resistance Trends (30 Days)</span>
+      <div class="trends-controls">
+        <span style="font-size:9px;color:var(--text-muted);font-weight:500;">Drug:</span>
+        <select class="trend-select" id="trend-drug-select">
+          <option value="">All Drugs</option>
+        </select>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="chart-wrapper">
+        <canvas id="trends-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cases Section -->
+  <div class="glass-panel cases-section animate-in animate-in-d3" id="cases-panel">
+    <div class="panel-header">
+      <span class="panel-title">Recent Cases</span>
+      <span class="panel-badge" id="cases-badge">— total</span>
+    </div>
+    <div class="panel-body">
+      <div style="overflow-x: auto;">
+        <table class="cases-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Source</th>
+              <th>Complaint</th>
+              <th class="hide-mobile">District</th>
+              <th class="hide-mobile">Severity</th>
+              <th class="hide-mobile">Age/Sex</th>
+              <th>When</th>
+            </tr>
+          </thead>
+          <tbody id="cases-body">
+            <tr><td colspan="7" class="empty-state">Loading cases…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer-bar" role="contentinfo">
+  <div class="footer-left">
+    <div class="footer-status">
+      <span class="status-dot"></span>
+      <span>System Operational</span>
+    </div>
+    <div class="footer-counter">
+      <strong id="footer-cases">—</strong> cases · <strong id="footer-alerts">—</strong> alerts · <strong id="footer-districts">—</strong> districts
+    </div>
+  </div>
+  <div class="footer-right">
+    <span class="footer-updated" id="footer-updated">Updating…</span>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   UDARA — BioLume Command Center
+   ═══════════════════════════════════════════════════════════ */
+
+const API = window.location.origin;
+const $ = id => document.getElementById(id);
+const $$ = q => document.querySelectorAll(q);
+
+// ── API helper ──
+const api = async (path) => {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(`API ${r.status}: ${path}`);
+  return r.json();
+};
+
+// ── Colors ──
+function resColor(pct) {
+  if (pct > 50) return '#EF4444';
+  if (pct > 25) return '#F59E0B';
+  if (pct > 10) return '#00D8FF';
+  return '#2DD4BF';
+}
+
+function severityColor(sev) {
+  const m = { critical: '#EF4444', high: '#F97316', medium: '#F59E0B', low: '#00D8FF' };
+  return m[sev] || '#F59E0B';
+}
+
+function sourceBadgeClass(source) {
+  return source || 'manual';
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const sec = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (sec < 10) return 'now';
+  if (sec < 60) return sec + 's';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h';
+  const d = Math.floor(h / 24);
+  return d + 'd';
+}
+
+// ── Animate counter ──
+function animateCounter(el, target, suffix = '', duration = 800) {
+  const start = parseInt(el.textContent.replace(/[^0-9.-]/g, '')) || 0;
+  const diff = target - start;
+  const startTime = performance.now();
+
+  function tick(now) {
+    const p = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(start + diff * eased) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAP — D3.js interactive Africa map
+// ═══════════════════════════════════════════════════════════
+
+async function initMap() {
+  const container = document.getElementById('globe-body');
+  if (!container) return;
+
+  const width = container.clientWidth || 800;
+  const height = 420;
+
+  // Tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'map-tooltip';
+  container.appendChild(tooltip);
+
+  // SVG setup
+  const svg = d3.select(container)
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .style('display', 'block');
+
+  // Glow filter def
+  const defs = svg.append('defs');
+  const filter = defs.append('filter').attr('id', 'point-glow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+  filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
+  filter.append('feMerge').selectAll('feMergeNode').data(['blur', 'SourceGraphic']).join('feMergeNode').attr('in', d => d);
+
+  const g = svg.append('g');
+  const mainGroup = g.append('g');
+
+  // Projection centered on Sub-Saharan Africa
+  const projection = d3.geoMercator()
+    .center([20, 2])
+    .scale(width * 1.15)
+    .translate([width / 2, height * 0.54]);
+
+  const path = d3.geoPath().projection(projection);
+
+  // Graticule
+  mainGroup.append('path')
+    .datum(d3.geoGraticule().step([15, 15]))
+    .attr('d', path)
+    .attr('fill', 'none')
+    .attr('stroke', 'rgba(0, 216, 255, 0.035)')
+    .attr('stroke-width', '0.3');
+
+  // African country names
+  const AFRICA = new Set([
+    'Nigeria', 'Ghana', 'Kenya', 'Tanzania', 'Uganda', 'Ethiopia',
+    'Dem. Rep. Congo', 'Zambia', 'Zimbabwe', 'Malawi', 'South Africa', 'Senegal',
+    'Mali', 'Niger', 'Chad', 'Sudan', 'South Sudan', 'Somalia', 'Mozambique',
+    'Angola', 'Namibia', 'Botswana', "Côte d'Ivoire", 'Burkina Faso', 'Benin',
+    'Togo', 'Sierra Leone', 'Liberia', 'Guinea', 'Cameroon', 'Central African Rep.',
+    'Gabon', 'Congo', 'Rwanda', 'Burundi', 'Eritrea', 'Djibouti', 'Madagascar',
+    'Mauritania', 'The Gambia', 'Guinea-Bissau', 'Eq. Guinea', 'Lesotho', 'eSwatini',
+    'Western Sahara', 'Mauritius', 'Comoros', 'Sao Tome & Principe', 'Cabo Verde',
+    'Seychelles', 'Djibouti', 'Morocco', 'Algeria', 'Tunisia', 'Libya', 'Egypt'
+  ]);
+
+  // Load TopoJSON country boundaries
+  try {
+    const world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+    const countries = topojson.feature(world, world.objects.countries);
+
+    const africanFeatures = countries.features.filter(f => AFRICA.has(f.properties.name));
+
+    // Country fills (subtle gradient based on whether we have data)
+    mainGroup.append('g')
+      .selectAll('path')
+      .data(africanFeatures)
+      .join('path')
+      .attr('d', path)
+      .attr('fill', '#0B1424')
+      .attr('stroke', 'rgba(0, 216, 255, 0.12)')
+      .attr('stroke-width', '0.6')
+      .attr('stroke-linejoin', 'round');
+
+    // Coastline highlight
+    mainGroup.append('g')
+      .selectAll('path')
+      .data(africanFeatures)
+      .join('path')
+      .attr('d', path)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(0, 216, 255, 0.3)')
+      .attr('stroke-width', '0.2');
+  } catch (e) {
+    console.warn('TopoJSON load failed (non-critical):', e);
+    // Draw fallback: simple background
+    mainGroup.append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', '#0B1424');
+  }
+
+  // Load district data and plot
+  try {
+    const data = await api('/api/v1/resistance/map');
+    if (!data.features || !data.features.length) {
+      mainGroup.append('text')
+        .attr('x', width / 2).attr('y', height / 2)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#5A6170').attr('font-size', '12px')
+        .text('No surveillance data available');
+      return;
+    }
+
+    const features = data.features.filter(f => f.lat != null && f.lng != null);
+    if (!features.length) return;
+
+    // Build lookup
+    const featMap = {};
+    features.forEach(f => { featMap[f.district] = f; });
+
+    // Arc connections between outbreak-linked districts
+    const arcPairs = [
+      ['Lagos', 'Accra'], ['Nairobi', 'Mombasa'], ['Kampala', 'Nairobi'],
+      ['Johannesburg', 'Lusaka'], ['Kinshasa', 'Lagos'], ['Addis Ababa', 'Nairobi'],
+      ['Accra', 'Kumasi'], ['Dar es Salaam', 'Mombasa'], ['Harare', 'Lusaka'],
+      ['Abuja', 'Lagos'], ['Dakar', 'Accra'], ['Lilongwe', 'Lusaka'],
+      ['Lagos', 'Abuja'], ['Kampala', 'Kinshasa'], ['Nairobi', 'Dar es Salaam'],
+    ];
+
+    const arcsGroup = mainGroup.append('g').attr('class', 'flow-arcs');
+
+    arcPairs
+      .filter(([a, b]) => featMap[a] && featMap[b])
+      .forEach(([a, b]) => {
+        const f1 = featMap[a], f2 = featMap[b];
+        const p1 = projection([f1.lng, f1.lat]);
+        const p2 = projection([f2.lng, f2.lat]);
+        if (!p1 || !p2) return;
+
+        const midX = (p1[0] + p2[0]) / 2;
+        const midY = (p1[1] + p2[1]) / 2;
+        const dx = p2[0] - p1[0];
+        const dy = p2[1] - p1[1];
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const curve = Math.max(8, dist * 0.15);
+
+        const avgPct = ((f1.avg_resistance_pct || 0) + (f2.avg_resistance_pct || 0)) / 2;
+
+        arcsGroup.append('path')
+          .attr('d', `M${p1[0]},${p1[1]} Q${midX},${midY - curve} ${p2[0]},${p2[1]}`)
+          .attr('fill', 'none')
+          .attr('stroke', resColor(avgPct) + '20')
+          .attr('stroke-width', '0.8')
+          .attr('stroke-dasharray', '3,4');
+      });
+
+    // Points group
+    const pointsGroup = mainGroup.append('g').attr('class', 'district-points');
+
+    features.forEach((f, i) => {
+      const p = projection([f.lng, f.lat]);
+      if (!p) return;
+
+      const pct = f.avg_resistance_pct || 0;
+      const r = Math.max(5, Math.min(16, pct / 7));
+      const color = resColor(pct);
+
+      // Glow layer
+      pointsGroup.append('circle')
+        .attr('cx', p[0]).attr('cy', p[1])
+        .attr('r', r * 2.5)
+        .attr('fill', color)
+        .attr('opacity', '0.1')
+        .attr('filter', 'url(#point-glow)');
+
+      // Main circle
+      pointsGroup.append('circle')
+        .attr('cx', p[0]).attr('cy', p[1])
+        .attr('r', r)
+        .attr('fill', color)
+        .attr('opacity', '0.85')
+        .attr('stroke', 'rgba(255,255,255,0.25)')
+        .attr('stroke-width', '1')
+        .style('cursor', 'pointer')
+        .on('mouseenter', (event) => showDistrictTip(event, f))
+        .on('mouseleave', () => hideTip());
+
+      // Center dot
+      pointsGroup.append('circle')
+        .attr('cx', p[0]).attr('cy', p[1])
+        .attr('r', Math.max(2, r * 0.25))
+        .attr('fill', '#fff').attr('opacity', '0.4');
+
+      // Pulse ring for high resistance (>40%)
+      if (pct > 40) {
+        pointsGroup.append('circle')
+          .attr('cx', p[0]).attr('cy', p[1])
+          .attr('r', r)
+          .attr('fill', 'none')
+          .attr('stroke', color)
+          .attr('stroke-width', '1.5')
+          .attr('opacity', '0.4')
+          .attr('class', 'pulse-ring')
+          .style('animation-delay', `${(i % 6) * 0.5}s`);
+      }
+
+      // District label for >50%
+      if (pct > 50) {
+        pointsGroup.append('text')
+          .attr('x', p[0]).attr('y', p[1] - r - 6)
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#EF4444')
+          .attr('font-size', '7')
+          .attr('font-weight', '600')
+          .attr('font-family', "'JetBrains Mono', monospace")
+          .text(f.district);
+      }
+    });
+
+    // Update badge count
+    const badge = document.getElementById('globe-badge');
+    if (badge) badge.textContent = features.length + ' districts';
+
+    // ── Tooltip functions ──
+    function showDistrictTip(event, f) {
+      const drugRows = f.drugs && f.drugs.length
+        ? f.drugs.slice(0, 5).map(d =>
+            `<div class="tip-drug">
+              <span>${d.drug}</span>
+              <span style="color:${resColor(d.resistance_pct)};font-weight:600">${d.resistance_pct}%</span>
+            </div>`
+          ).join('')
+        : '<div style="color:#5A6170;font-size:10px;">No data</div>';
+
+      tooltip.innerHTML = `
+        <div class="tip-header">${escHtml(f.district)}</div>
+        <div class="tip-region">${f.region || ''} · ${f.active_alerts || 0} alerts</div>
+        <div class="tip-divider"></div>
+        <div class="tip-stat">
+          <span style="color:#949BA8;font-size:10px;">Avg Resistance</span>
+          <span style="color:${resColor(f.avg_resistance_pct)};font-size:22px;font-weight:700">${f.avg_resistance_pct}%</span>
+        </div>
+        <div class="tip-divider"></div>
+        <div class="tip-drugs-label">Top Drugs</div>
+        ${drugRows}
+      `;
+      tooltip.style.display = 'block';
+
+      // Position tooltip anchored to the dot's screen position, not the cursor
+      const rect = event.target.getBoundingClientRect();
+      const dotX = rect.left + rect.width / 2;
+      const dotY = rect.top + rect.height / 2;
+
+      const tipWidth = 240;
+      const tipHeight = tooltip.offsetHeight || 200;
+
+      // Place to the right of the dot, centered vertically
+      let left = dotX + 12;
+      let top = dotY - tipHeight / 2;
+
+      // Clamp to viewport
+      if (left + tipWidth > window.innerWidth - 16) left = dotX - tipWidth - 12;
+      if (top < 16) top = 16;
+      if (top + tipHeight > window.innerHeight - 16) top = window.innerHeight - tipHeight - 16;
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    }
+
+    function hideTip() {
+      tooltip.style.display = 'none';
+    }
+
+  } catch (e) {
+    console.error('Map data load failed:', e);
+  }
+
+  // Zoom behavior
+  const zoom = d3.zoom()
+    .scaleExtent([1, 8])
+    .on('zoom', (event) => {
+      mainGroup.attr('transform', event.transform);
+    });
+
+  svg.call(zoom);
+
+  // Double-click to reset zoom
+  svg.on('dblclick.zoom', (event) => {
+    svg.transition().duration(600).call(
+      zoom.transform,
+      d3.zoomIdentity
+    );
+  });
+
+  // Initial zoom hint
+  setTimeout(() => {
+    const hint = container.querySelector('.map-zoom-hint');
+    if (hint) hint.style.opacity = '0.4';
+  }, 6000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STATS → HERO CARDS
+// ═══════════════════════════════════════════════════════════
+
+async function loadStats() {
+  try {
+    const d = await api('/api/v1/stats/dashboard');
+
+    applyStat('val-cases', d.total_cases, '');
+    applyStat('val-alerts', d.active_alerts, '');
+    applyStat('val-resistance', d.avg_resistance_pct, '%');
+    applyStat('val-districts', d.districts_covered, '');
+    applyStat('val-week', d.cases_this_week, '');
+
+    applyChange('change-cases', d.total_cases_change);
+    applyChange('change-alerts', d.active_alerts_change, true);
+    applyChange('change-resistance', d.avg_resistance_change);
+    applyChange('change-districts', null);
+    applyChange('change-week', null);
+
+    // Footer
+    setText('footer-cases', d.total_cases);
+    setText('footer-alerts', d.active_alerts);
+    setText('footer-districts', d.districts_covered);
+
+  } catch (e) { console.error('Stats load failed:', e); }
+}
+
+function applyStat(id, val, suffix) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.remove('loading');
+  animateCounter(el, val || 0, suffix || '');
+}
+
+function applyChange(id, val, inverseBad = false) {
+  const el = $(id);
+  if (!el) return;
+  if (val == null) { el.classList.add('neutral'); el.textContent = '—'; return; }
+  const isUp = val > 0;
+  const arrow = isUp ? '↑' : '↓';
+  el.className = 'stat-change ' + (isUp ? 'up' : 'down');
+  el.textContent = `${arrow} ${Math.abs(val)}%`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ALERTS
+// ═══════════════════════════════════════════════════════════
+
+async function loadAlerts() {
+  try {
+    const d = await api('/api/v1/alerts?per_page=8');
+    setText('alerts-badge', (d.total || 0) + ' active');
+    const body = $('alerts-body');
+
+    if (!d.alerts || !d.alerts.length) {
+      body.innerHTML = '<div class="empty-state">No active alerts</div>';
+      return;
+    }
+
+    body.innerHTML = d.alerts.map(a => {
+      const sc = severityColor(a.severity);
+      return `<div class="alert-item" tabindex="0">
+        <div class="alert-severity-indicator" style="background:${sc};"></div>
+        <div class="alert-content">
+          <div class="alert-title">${escHtml(a.title)}</div>
+          <div class="alert-message">${escHtml(a.message)}</div>
+          <div class="alert-meta">${a.district || ''}${a.drug ? ' · ' + a.drug : ''} · ${timeAgo(a.created_at)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch (e) { console.error('Alerts load failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRUG RESISTANCE
+// ═══════════════════════════════════════════════════════════
+
+async function loadDrugs() {
+  try {
+    const d = await api('/api/v1/resistance/map');
+    const agg = {};
+    if (d.features) {
+      d.features.forEach(f => {
+        if (f.drugs) f.drugs.forEach(dr => {
+          if (!agg[dr.drug]) agg[dr.drug] = { sum: 0, count: 0 };
+          agg[dr.drug].sum += dr.resistance_pct;
+          agg[dr.drug].count++;
+        });
+      });
+    }
+
+    const entries = Object.entries(agg)
+      .map(([k, v]) => ({ drug: k, avg: +(v.sum / v.count).toFixed(1) }))
+      .sort((a, b) => b.avg - a.avg);
+
+    setText('drugs-badge', entries.length + ' drugs');
+    const body = $('drugs-body');
+
+    if (!entries.length) {
+      body.innerHTML = '<div class="empty-state">No data</div>';
+      return;
+    }
+
+    body.innerHTML = entries.map((e, i) => {
+      const color = resColor(e.avg);
+      return `<div class="drug-item">
+        <span class="drug-label">${e.drug}</span>
+        <div class="drug-bar-track">
+          <div class="drug-bar-fill" style="width:${Math.min(e.avg, 100)}%;background:${color};transition-delay:${i * 40}ms;"></div>
+        </div>
+        <span class="drug-pct" style="color:${color};">${e.avg}%</span>
+      </div>`;
+    }).join('');
+
+  } catch (e) { console.error('Drugs load failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TRENDS CHART
+// ═══════════════════════════════════════════════════════════
+
+let trendsChart = null;
+
+async function loadTrends(drugFilter = '') {
+  try {
+    const params = drugFilter ? `?drug=${encodeURIComponent(drugFilter)}` : '';
+    const d = await api('/api/v1/resistance/trends' + params);
+
+    if (!d.dates || !d.series) return;
+
+    const datasets = Object.entries(d.series).map(([label, data], i) => {
+      const colors = ['#00D8FF', '#2DD4BF', '#A78BFA', '#F59E0B', '#F97316', '#EF4444'];
+      return {
+        label,
+        data,
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length] + '08',
+        fill: false,
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 4,
+        borderWidth: 1.5,
+      };
+    });
+
+    const ctx = document.getElementById('trends-chart').getContext('2d');
+
+    if (trendsChart) {
+      trendsChart.data.labels = d.dates;
+      trendsChart.data.datasets = datasets;
+      trendsChart.update('none');
+      return;
+    }
+
+    trendsChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: d.dates, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 600, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: '#949BA8',
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 9 },
+              boxWidth: 10,
+              boxHeight: 2,
+              padding: 10,
+            },
+          },
+          tooltip: {
+            backgroundColor: 'rgba(8,13,26,0.92)',
+            titleColor: '#EEF0F4',
+            bodyColor: '#949BA8',
+            borderColor: 'rgba(0,216,255,0.1)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8,
+            titleFont: { family: "'Outfit', sans-serif", size: 11 },
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 10 },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#5A6170',
+              font: { size: 9 },
+              maxTicksLimit: 8,
+            },
+          },
+          y: {
+            min: 0,
+            max: 100,
+            grid: {
+              color: 'rgba(255,255,255,0.02)',
+            },
+            ticks: {
+              color: '#5A6170',
+              font: { size: 9 },
+              callback: v => v + '%',
+            },
+          },
+        },
+      },
+    });
+
+  } catch (e) { console.error('Trends load failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CASES TABLE
+// ═══════════════════════════════════════════════════════════
+
+async function loadCases() {
+  try {
+    const d = await api('/api/v1/cases?per_page=12');
+    setText('cases-badge', (d.total || 0) + ' total');
+    const body = $('cases-body');
+
+    if (!d.cases || !d.cases.length) {
+      body.innerHTML = '<tr><td colspan="7" class="empty-state">No cases reported</td></tr>';
+      return;
+    }
+
+    body.innerHTML = d.cases.map(c => {
+      const id = (c.case_id || '').slice(0, 6) || '—';
+      const src = c.source || 'manual';
+      const ageStr = c.patient_age_years ? c.patient_age_years + 'y' : '—';
+      const sexStr = c.patient_sex && c.patient_sex !== 'unknown' ? c.patient_sex.charAt(0).toUpperCase() : '—';
+      const sevColor = severityColor(c.severity);
+      const complaint = (c.complaint || '').slice(0, 55) + ((c.complaint || '').length > 55 ? '…' : '');
+
+      return `<tr>
+        <td><span class="case-id">${id}</span></td>
+        <td><span class="source-badge ${sourceBadgeClass(src)}">${src}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${complaint || '—'}</td>
+        <td class="hide-mobile"><span class="district-tag">${c.district || '—'}</span></td>
+        <td class="hide-mobile">
+          <span class="severity-badge">
+            <span class="severity-dot" style="background:${sevColor}"></span>
+            ${c.severity || 'unknown'}
+          </span>
+        </td>
+        <td class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">${ageStr} / ${sexStr}</td>
+        <td><span class="time-ago">${timeAgo(c.created_at)}</span></td>
+      </tr>`;
+    }).join('');
+
+  } catch (e) { console.error('Cases load failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRUG DROPDOWN
+// ═══════════════════════════════════════════════════════════
+
+async function loadDrugDropdown() {
+  try {
+    const d = await api('/api/v1/resistance/drugs');
+    const select = $('trend-drug-select');
+    if (!d.drugs) return;
+    d.drugs.forEach(drug => {
+      const opt = document.createElement('option');
+      opt.value = drug;
+      opt.textContent = drug;
+      select.appendChild(opt);
+    });
+
+    select.addEventListener('change', () => {
+      loadTrends(select.value);
+    });
+
+  } catch (e) { console.error('Drug dropdown failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UTILITY
+// ═══════════════════════════════════════════════════════════
+
+function setText(id, val) {
+  const el = $(id);
+  if (el) el.textContent = val;
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════════════════
+
+function updateClock() {
+  const now = new Date();
+  const utc = now.toUTCString().split(' ')[4];
+  $('header-time').textContent = utc + ' UTC';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FULL REFRESH
+// ═══════════════════════════════════════════════════════════
+
+async function fullRefresh() {
+  try {
+    await Promise.all([
+      loadStats(),
+      loadAlerts(),
+      loadDrugs(),
+      loadCases(),
+    ]);
+    $('footer-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    console.error('Refresh failed:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  fullRefresh();
+  initMap();
+  loadTrends();
+  loadDrugDropdown();
+
+  // Auto-refresh every 25 seconds
+  setInterval(() => {
+    fullRefresh();
+    loadTrends($('trend-drug-select').value);
+  }, 25000);
+});
+</script>
+</body>
+</html>
