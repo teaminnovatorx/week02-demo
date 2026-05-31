@@ -1801,6 +1801,191 @@ window.addEventListener('scroll', () => {
   }
 }, { passive: true });
 
+/* ═══════════════════════════════════════════════════════════
+   LIVE DATA ENGINE — v0.3
+   ═══════════════════════════════════════════════════════════ */
+
+const COMPLAINT_POOL = [
+  'Fever with chills for 5 days, no response to amoxicillin',
+  'Productive cough with yellow sputum, chest pain on deep breathing',
+  'Burning urination, frequency, suprapubic pain for 3 days',
+  'Infected surgical wound with purulent discharge, erythema spreading',
+  'Persistent watery diarrhea with dehydration signs, 4 days',
+  'Severe headache, neck stiffness, photophobia, fever 39.5C',
+  'Joint pain with swelling, heat, limited range of motion',
+  'Non-healing ulcer on foot, surrounding cellulitis, diabetic patient',
+  'High fever with rash, myalgia, severe fatigue — 3 days',
+  'Dysuria with cloudy urine, foul odor, previous UTI history',
+  'Chest congestion, wheezing, green sputum, SOB on exertion',
+  'Purulent conjunctivitis, eye discharge, crusting on eyelids',
+  'Abdominal pain, bloody stool, fever, recent antibiotic course',
+  'Ear discharge, otalgia, hearing loss — 2 weeks post-amoxicillin',
+  'Pneumonia not responding to 3 days of azithromycin',
+  'Post-operative wound infection with MRSA-positive culture',
+  'Recurrent UTI with ESBL-producing E. coli, nitrofurantoin failure',
+  'Meningitis symptoms with ceftriaxone-resistant S. pneumoniae',
+  'Gonorrhea treatment failure after dual therapy',
+  'Cellulitis spreading despite 48h of flucloxacillin',
+  'Neonatal sepsis with multi-drug resistant Klebsiella',
+  'Diabetic foot infection with osteomyelitis, Pseudomonas suspected',
+  'TB treatment failure — sputum still positive after 4 months',
+  'Surgical site infection with Acinetobacter baumannii',
+  'Ventilator-associated pneumonia with carbapenem-resistant organisms',
+  'Intra-abdominal abscess post-surgery, polymicrobial resistance',
+  'Osteomyelitis with methicillin-resistant Staphylococcus aureus',
+  'Pyelonephritis with extended-spectrum beta-lactamase producers',
+  'Bacteremia with vancomycin-resistant Enterococcus',
+  'Wound infection in conflict zone, no response to empiric therapy',
+];
+
+const DISTRICT_WEIGHTS = [
+  { district: 'Lagos', weight: 15 },
+  { district: 'Nairobi', weight: 12 },
+  { district: 'Accra', weight: 10 },
+  { district: 'Kinshasa', weight: 9 },
+  { district: 'Kampala', weight: 8 },
+  { district: 'Johannesburg', weight: 8 },
+  { district: 'Dar es Salaam', weight: 7 },
+  { district: 'Addis Ababa', weight: 7 },
+  { district: 'Mombasa', weight: 6 },
+  { district: 'Kumasi', weight: 5 },
+  { district: 'Abuja', weight: 5 },
+  { district: 'Lusaka', weight: 3 },
+  { district: 'Harare', weight: 3 },
+  { district: 'Lilongwe', weight: 2 },
+  { district: 'Dakar', weight: 2 },
+];
+
+const SOURCE_WEIGHTS = [
+  { source: 'telegram', weight: 40 },
+  { source: 'whatsapp', weight: 30 },
+  { source: 'ussd', weight: 15 },
+  { source: 'sms', weight: 10 },
+  { source: 'manual', weight: 5 },
+];
+
+const SEVERITY_WEIGHTS = [
+  { severity: 'moderate', weight: 60 },
+  { severity: 'mild', weight: 25 },
+  { severity: 'severe', weight: 10 },
+  { severity: 'critical', weight: 5 },
+];
+
+const ALERT_TEMPLATES = [
+  { severity: 'critical', title: 'Ciprofloxacin-Resistant E. coli Surge', drug: 'Ciprofloxacin' },
+  { severity: 'critical', title: 'Carbapenem Resistance Detected', drug: 'Meropenem' },
+  { severity: 'critical', title: 'MRSA Cluster Identified', drug: 'Penicillin' },
+  { severity: 'high', title: 'ESBL-Producing K. pneumoniae Alert', drug: 'Ceftriaxone' },
+  { severity: 'high', title: 'Azithromycin Treatment Failure', drug: 'Azithromycin' },
+  { severity: 'high', title: 'MDR Pseudomonas in ICU', drug: 'Gentamicin' },
+  { severity: 'medium', title: 'Rising Amoxicillin Resistance', drug: 'Amoxicillin' },
+  { severity: 'medium', title: 'Doxycycline Resistance Pattern', drug: 'Doxycycline' },
+];
+
+function weightedRandom(pool, key = 'weight') {
+  const total = pool.reduce((sum, item) => sum + item[key], 0);
+  let rand = Math.random() * total;
+  for (const item of pool) {
+    rand -= item[key];
+    if (rand <= 0) return item;
+  }
+  return pool[pool.length - 1];
+}
+
+function randomId() {
+  return Math.random().toString(36).slice(2, 8);
+}
+
+function randomAge() {
+  return Math.floor(Math.random() * 75) + 1;
+}
+
+function randomSex() {
+  return Math.random() > 0.5 ? 'male' : 'female';
+}
+
+class LiveDataEngine {
+  constructor() {
+    this.running = false;
+    this.caseCount = 250;
+    this.alertCount = 10;
+    this.caseWeekCount = 47;
+    this.intervalId = null;
+  }
+
+  start() {
+    if (this.running) return;
+    this.running = true;
+    const badge = document.getElementById('live-badge');
+    if (badge) badge.classList.add('visible');
+    setTimeout(() => this.tick(), 3000);
+  }
+
+  stop() {
+    this.running = false;
+    if (this.intervalId) clearTimeout(this.intervalId);
+    const badge = document.getElementById('live-badge');
+    if (badge) badge.classList.remove('visible');
+  }
+
+  tick() {
+    if (!this.running) return;
+    this.emitCase();
+    if (Math.random() < 0.3) {
+      setTimeout(() => this.emitAlert(), 500 + Math.random() * 1000);
+    }
+    this.emitStatsUpdate();
+    const delay = 8000 + Math.random() * 7000;
+    this.intervalId = setTimeout(() => this.tick(), delay);
+  }
+
+  emitCase() {
+    this.caseCount++;
+    this.caseWeekCount++;
+    const district = weightedRandom(DISTRICT_WEIGHTS, 'weight').district;
+    const source = weightedRandom(SOURCE_WEIGHTS, 'weight').source;
+    const severity = weightedRandom(SEVERITY_WEIGHTS, 'weight').severity;
+    const detail = {
+      case_id: randomId(),
+      source,
+      complaint: COMPLAINT_POOL[Math.floor(Math.random() * COMPLAINT_POOL.length)],
+      district,
+      severity,
+      age: randomAge(),
+      sex: randomSex(),
+      time: 'just now',
+    };
+    window.dispatchEvent(new CustomEvent('case:new', { detail }));
+  }
+
+  emitAlert() {
+    this.alertCount++;
+    const template = ALERT_TEMPLATES[Math.floor(Math.random() * ALERT_TEMPLATES.length)];
+    const district = weightedRandom(DISTRICT_WEIGHTS, 'weight').district;
+    const detail = {
+      severity: template.severity,
+      title: template.title,
+      message: `${district}: New resistance pattern detected. ${template.drug} showing decreased efficacy.`,
+      district,
+      drug: template.drug,
+      time: 'just now',
+    };
+    window.dispatchEvent(new CustomEvent('alert:new', { detail }));
+  }
+
+  emitStatsUpdate() {
+    window.dispatchEvent(new CustomEvent('stats:update', {
+      detail: {
+        total_cases: this.caseCount,
+        active_alerts: this.alertCount,
+        cases_this_week: this.caseWeekCount,
+      }
+    }));
+  }
+}
+
+const liveEngine = new LiveDataEngine();
+
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
   initReveals();
