@@ -3,1684 +3,1638 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UDARA — AMR Command Center</title>
+<title>STAI — Sentri Intelligence | AMR Surveillance</title>
+<meta name="description" content="Real-time antimicrobial resistance surveillance across Africa. Report cases via Telegram, WhatsApp, and SMS.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-/* ═══════════════════════════════════════════════
-   UDARA — BioLume Command Center
-   ═══════════════════════════════════════════════ */
-
-:root {
-  --bg-deep: #05080F;
-  --bg-primary: #080D1A;
-  --bg-elevated: rgba(12, 20, 40, 0.72);
-  --bg-glass: rgba(10, 16, 32, 0.55);
-  --border: rgba(0, 216, 255, 0.06);
-  --border-hover: rgba(0, 216, 255, 0.18);
-  --border-active: rgba(0, 216, 255, 0.35);
-  --cyan: #00D8FF;
-  --cyan-dim: rgba(0, 216, 255, 0.08);
-  --cyan-glow: rgba(0, 216, 255, 0.15);
-  --emerald: #2DD4BF;
-  --emerald-dim: rgba(45, 212, 191, 0.08);
-  --emerald-glow: rgba(45, 212, 191, 0.12);
-  --amber: #F59E0B;
-  --amber-dim: rgba(245, 158, 11, 0.08);
-  --coral: #F97316;
-  --red: #EF4444;
-  --red-dim: rgba(239, 68, 68, 0.08);
-  --purple: #A78BFA;
-  --purple-dim: rgba(167, 139, 250, 0.08);
-  --text: #EEF0F4;
-  --text-dim: #949BA8;
-  --text-muted: #5A6170;
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --shadow: 0 8px 32px rgba(0,0,0,0.4);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* ═══════════════════════════════════════════════════════════
+   STAI — SENTRI INTELLIGENCE
+   Cinematic Scrollytelling Dashboard
+   Apple Keynote Energy × Luxury Biotech
+   ═══════════════════════════════════════════════════════════ */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: var(--radius-sm); }
+:root {
+  --bg-deep: #06090F;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-glass: rgba(255,255,255,0.04);
+  --border-glass: rgba(255,255,255,0.06);
+  --aurora-1: #4ADE80;
+  --aurora-2: #2DD4BF;
+  --aurora-3: #A78BFA;
+  --accent: #00F0FF;
+  --amber: #F59E0B;
+  --red: #EF4444;
+  --text: #EEF0F4;
+  --text-dim: #949BA8;
+  --text-muted: #5A6170;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 16px;
+  --radius-sm: 8px;
+}
 
-::-webkit-scrollbar { width: 3px; height: 3px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
 
-html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
   background: var(--bg-deep);
   color: var(--text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ═══ AMBIENT BACKGROUND ═══ */
-body::before {
-  content: ''; position: fixed; inset: 0; z-index: 0;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% 30%, rgba(0, 216, 255, 0.025) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 20% 70%, rgba(45, 212, 191, 0.015) 0%, transparent 50%),
-    radial-gradient(ellipse 30% 30% at 80% 80%, rgba(167, 139, 250, 0.01) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-/* Grid overlay */
+/* ── Grain overlay ── */
 body::after {
-  content: ''; position: fixed; inset: 0; z-index: 0;
-  background-image:
-    linear-gradient(rgba(0, 216, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 216, 255, 0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 10000;
+}
+
+/* ── Aurora mesh background ── */
+.aurora-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
-
-
-/* ═══ NOISE OVERLAY ═══ */
-.noise-overlay {
-  position: fixed; inset: 0; z-index: 2;
-  pointer-events: none; opacity: 0.015;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  background-repeat: repeat; background-size: 256px 256px;
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  animation: auroraShift 12s ease-in-out infinite alternate;
 }
 
-/* ═══════════════════════════════════════════════
-   HEADER
-   ═══════════════════════════════════════════════ */
-
-.header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 28px; height: 64px;
-  background: linear-gradient(180deg, rgba(5, 8, 15, 0.95) 0%, rgba(5, 8, 15, 0.7) 60%, transparent 100%);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+.aurora-blob:nth-child(1) {
+  width: 600px; height: 600px;
+  background: var(--aurora-1);
+  top: -200px; left: -100px;
+  animation-duration: 14s;
 }
 
-.header-left { display: flex; align-items: center; gap: 12px; }
-
-.logo {
-  display: flex; align-items: center; gap: 10px;
-  text-decoration: none; color: var(--text);
+.aurora-blob:nth-child(2) {
+  width: 500px; height: 500px;
+  background: var(--aurora-2);
+  top: 40%; right: -150px;
+  animation-duration: 10s;
+  animation-delay: -3s;
 }
 
-.logo-icon {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--cyan), var(--emerald));
-  display: flex; align-items: center; justify-content: center;
-  color: var(--bg-deep); font-size: 13px; font-weight: 800;
-  font-family: var(--font-display); position: relative;
+.aurora-blob:nth-child(3) {
+  width: 400px; height: 400px;
+  background: var(--aurora-3);
+  bottom: -100px; left: 30%;
+  animation-duration: 16s;
+  animation-delay: -6s;
 }
 
-.logo-icon::after {
-  content: ''; position: absolute; inset: -2px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--cyan), transparent, var(--emerald));
-  opacity: 0.3; z-index: -1;
+@keyframes auroraShift {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.1); }
+  66% { transform: translate(-20px, 50px) scale(0.95); }
+  100% { transform: translate(30px, 20px) scale(1.05); }
 }
 
-.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; font-family: var(--font-display); }
-.logo-sup {
-  font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
-  background: var(--cyan-dim); color: var(--cyan);
-  border: 1px solid var(--border); letter-spacing: 0.3px;
-  margin-left: 4px;
+/* ── Section base ── */
+.section {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
 }
 
-.status-badge {
-  display: flex; align-items: center; gap: 6px;
-  padding: 5px 12px; border-radius: 20px;
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.15);
-  font-size: 10px; font-weight: 600; color: var(--success);
-  letter-spacing: 0.3px; text-transform: uppercase;
+.section-inner {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
 }
 
-.status-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--success);
-  animation: pulseDot 2s ease-in-out infinite;
+/* ── Glass card ── */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-@keyframes pulseDot { 0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--success); } 50% { opacity: 0.3; box-shadow: 0 0 0px var(--success); } }
-
-.header-right {
-  display: flex; align-items: center; gap: 8px;
+.glass:hover {
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 0 40px rgba(0,240,255,0.04);
 }
 
-.header-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: var(--radius-sm);
-  background: var(--bg-glass); border: 1px solid var(--border);
-  color: var(--text-dim); font-size: 11px; font-weight: 500;
-  font-family: var(--font-body); cursor: pointer;
-  text-decoration: none; transition: var(--transition);
+/* ── Typography ── */
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
+.mono { font-family: var(--font-mono); }
+.dim { color: var(--text-dim); }
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent); }
+
+/* ── Scroll reveal ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.header-btn:hover {
-  border-color: var(--border-hover); color: var(--text);
-  background: var(--bg-elevated);
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.header-btn-primary {
-  background: linear-gradient(135deg, var(--cyan), var(--emerald));
-  border-color: transparent; color: var(--bg-deep);
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(60px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger delays */
+.delay-1 { transition-delay: 0.1s; }
+.delay-2 { transition-delay: 0.2s; }
+.delay-3 { transition-delay: 0.3s; }
+.delay-4 { transition-delay: 0.4s; }
+.delay-5 { transition-delay: 0.5s; }
+.delay-6 { transition-delay: 0.6s; }
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 0: HERO — THE ARRIVAL
+   ═══════════════════════════════════════════════════════════ */
+
+#hero {
+  min-height: 100vh;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-logo {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 10vw, 96px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2), var(--aurora-3));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 8s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero-subtitle {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 3vw, 28px);
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.hero-tagline {
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--text-muted);
+  max-width: 500px;
+  margin: 0 auto 60px;
+  line-height: 1.6;
+}
+
+/* Hero particles canvas */
+#hero-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+.scroll-indicator span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.scroll-arrow {
+  width: 20px;
+  height: 20px;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
+  transform: rotate(45deg);
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes scrollBounce {
+  0%, 100% { transform: rotate(45deg) translateY(0); }
+  50% { transform: rotate(45deg) translateY(6px); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 1: THE CRISIS
+   ═══════════════════════════════════════════════════════════ */
+
+#crisis {
+  text-align: center;
+}
+
+.crisis-number {
+  font-family: var(--font-mono);
+  font-size: clamp(64px, 12vw, 120px);
   font-weight: 700;
+  color: var(--red);
+  line-height: 1;
+  margin-bottom: 8px;
+  text-shadow: 0 0 80px rgba(239,68,68,0.2);
 }
 
-.header-btn-primary:hover {
-  background: linear-gradient(135deg, #33E0FF, #4DD8C4);
-  color: var(--bg-deep); border-color: transparent;
-}
-
-.header-time {
-  font-size: 11px; color: var(--text-muted);
-  font-family: var(--font-mono); font-weight: 500;
-  padding: 0 8px;
-}
-
-/* ═══════════════════════════════════════════════
-   HERO STATS
-   ═══════════════════════════════════════════════ */
-
-.hero-stats {
-  position: relative; z-index: 10;
-  padding: 82px 24px 0; max-width: 1440px; margin: 0 auto;
+.crisis-label {
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--text-dim);
+  margin-bottom: 60px;
 }
 
 .stats-grid {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .stat-card {
-  position: relative;
-  background: var(--bg-glass);
-  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  transition: var(--transition);
-  cursor: default; overflow: hidden;
-}
-
-.stat-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-hover), transparent);
-  opacity: 0; transition: var(--transition);
-}
-
-.stat-card:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-elevated);
-  transform: translateY(-1px);
-}
-
-.stat-card:hover::before { opacity: 1; }
-
-.stat-card .stat-glow {
-  position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
-  border-radius: 50%;
-  opacity: 0; transition: var(--transition);
-  pointer-events: none;
-}
-
-.stat-card:hover .stat-glow { opacity: 0.08; }
-
-.stat-label {
-  font-size: 9px; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.8px;
-  margin-bottom: 6px;
+  padding: 28px 24px;
+  text-align: center;
 }
 
 .stat-value {
-  font-family: var(--font-display);
-  font-size: 28px; font-weight: 700;
-  letter-spacing: -0.5px; line-height: 1.1;
-  transition: var(--transition);
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .stat-change {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10px; font-weight: 600; margin-top: 4px;
-  padding: 1px 6px; border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-top: 8px;
 }
 
-.stat-change.up { color: var(--success); background: rgba(34, 197, 94, 0.08); }
-.stat-change.down { color: var(--red); background: rgba(239, 68, 68, 0.08); }
-.stat-change.neutral { color: var(--text-muted); background: rgba(90, 97, 112, 0.08); }
+.stat-change.up { color: var(--aurora-1); }
+.stat-change.down { color: var(--red); }
 
-/* ═══════════════════════════════════════════════
-   MAIN CONTENT
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   SECTION 2: THE VISION
+   ═══════════════════════════════════════════════════════════ */
 
-.main-content {
-  position: relative; z-index: 10;
-  padding: 14px 24px 80px;
-  max-width: 1440px; margin: 0 auto;
+#vision {
+  text-align: center;
+  min-height: 80vh;
 }
 
-.content-grid {
-  display: grid; grid-template-columns: 1.5fr 1fr;
-  gap: 12px; margin-bottom: 14px;
-}
-
-.glass-panel {
-  background: var(--bg-glass);
-  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: var(--transition);
-}
-
-.glass-panel:hover { border-color: var(--border-hover); }
-
-.panel-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-}
-
-.panel-title {
+.vision-text {
   font-family: var(--font-display);
-  font-size: 12px; font-weight: 700; color: var(--text);
-  letter-spacing: 0.2px; text-transform: uppercase;
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.panel-badge {
-  font-size: 9px; font-weight: 600;
-  padding: 3px 9px; border-radius: 12px;
-  background: var(--cyan-dim); color: var(--cyan);
-  border: 1px solid var(--border);
+.vision-text .word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.panel-body { padding: 4px 0; }
+.vision-text .word.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
-/* ═══ Map Panel ═══ */
-.map-panel { position: relative; min-height: 440px; }
-.map-panel .panel-body { padding: 0; height: 420px; position: relative; overflow: visible !important; }
-.map-panel svg { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.vision-text .highlight {
+  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-.map-legend {
-  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 14px; align-items: center;
-  padding: 6px 16px;
-  background: rgba(5, 8, 15, 0.75);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border); border-radius: 20px;
-  font-size: 9px; color: var(--text-dim); font-weight: 500;
-  z-index: 5;
+/* ═══════════════════════════════════════════════════════════
+   SECTION 3: HOW IT WORKS
+   ═══════════════════════════════════════════════════════════ */
+
+#how-it-works {
+  text-align: center;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(12px, 1.5vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--aurora-2);
+  margin-bottom: 12px;
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  font-size: 16px;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 0 auto 60px;
+  line-height: 1.6;
+}
+
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto 48px;
+}
+
+.channel-card {
+  padding: 36px 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.channel-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.channel-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.channel-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.pipeline-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+.pipeline-step {
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.pipeline-arrow {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 4: LIVE MAP
+   ═══════════════════════════════════════════════════════════ */
+
+#live-map {
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+
+.map-container {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  aspect-ratio: 1.3;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.map-container svg {
+  width: 100%;
+  height: 100%;
 }
 
 .map-tooltip {
-  position: fixed; z-index: 9999;
-  background: rgba(8, 13, 26, 0.94);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 216, 255, 0.1);
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-family: var(--font-body);
-  color: var(--text);
-  font-size: 11px;
-  line-height: 1.6;
-  min-width: 180px;
-  max-width: 240px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  position: absolute;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
   pointer-events: none;
-  display: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+  min-width: 200px;
+  background: rgba(6,9,15,0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
 }
 
-.tip-header {
-  font-size: 15px; font-weight: 700;
-  font-family: var(--font-display);
-  margin-bottom: 1px;
+.map-tooltip.active { opacity: 1; }
+
+.map-tooltip h4 {
+  font-size: 14px;
+  margin-bottom: 8px;
 }
 
-.tip-region {
-  color: var(--text-muted);
-  font-size: 9px; font-weight: 500;
-  letter-spacing: 0.3px; text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.tip-divider {
-  border: none; border-top: 1px solid rgba(0, 216, 255, 0.06);
-  margin: 5px 0;
-}
-
-.tip-stat {
-  display: flex; justify-content: space-between;
+.map-tooltip .drug-row {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin: 4px 0;
+  padding: 3px 0;
+  font-size: 11px;
 }
 
-.tip-drug {
-  display: flex; justify-content: space-between;
-  gap: 12px; font-size: 10px;
+.map-tooltip .drug-name { color: var(--text-dim); }
+.map-tooltip .drug-pct { font-family: var(--font-mono); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 5: ALERTS
+   ═══════════════════════════════════════════════════════════ */
+
+#alerts {
+  padding-top: 80px;
+  padding-bottom: 80px;
 }
 
-.tip-drugs-label {
-  color: var(--text-muted);
-  font-size: 8px; text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.8); opacity: 0; }
-}
-
-.pulse-ring {
-  transform-origin: center;
-  animation: pulse-ring 2.5s ease-out infinite;
-}
-
-.map-zoom-hint {
-  position: absolute; top: 10px; right: 10px; z-index: 5;
-  padding: 4px 10px;
-  background: rgba(5, 8, 15, 0.6);
-  border: 1px solid var(--border); border-radius: 8px;
-  font-size: 8px; color: var(--text-muted);
-  font-family: var(--font-mono);
-  pointer-events: none;
-}
-
-/* ═══ Alerts Panel ═══ */
-.alerts-panel { max-height: 280px; overflow: hidden; display: flex; flex-direction: column; }
-.alerts-panel .panel-body { flex: 1; overflow-y: auto; }
-
-.alert-item {
-  display: flex; gap: 10px;
-  padding: 11px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.015);
-  transition: var(--transition); cursor: pointer;
-}
-
-.alert-item:last-child { border-bottom: none; }
-.alert-item:hover { background: rgba(0, 216, 255, 0.015); }
-
-.alert-severity-indicator {
-  width: 3px; border-radius: 2px; flex-shrink: 0;
-}
-
-.alert-content { flex: 1; min-width: 0; }
-
-.alert-title {
-  font-size: 12px; font-weight: 600; color: var(--text);
-  line-height: 1.3; margin-bottom: 2px;
-}
-
-.alert-message {
-  font-size: 11px; color: var(--text-dim);
-  line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+.alert-card {
+  padding: 20px 24px;
+  position: relative;
   overflow: hidden;
 }
 
+.alert-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+}
+
+.alert-card.critical::before { background: var(--red); box-shadow: 0 0 12px rgba(239,68,68,0.3); }
+.alert-card.high::before { background: var(--amber); box-shadow: 0 0 12px rgba(245,158,11,0.2); }
+.alert-card.medium::before { background: var(--accent); box-shadow: 0 0 12px rgba(0,240,255,0.15); }
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: alertPulse 2s ease-in-out infinite;
+}
+
+.critical .alert-dot { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+.high .alert-dot { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+.medium .alert-dot { background: var(--accent); box-shadow: 0 0 8px rgba(0,240,255,0.3); }
+
+@keyframes alertPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.6; }
+}
+
+.alert-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.alert-message {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
 .alert-meta {
-  font-size: 9px; color: var(--text-muted);
-  margin-top: 4px; font-family: var(--font-mono);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* ═══ Resistance Panel ═══ */
-.resistance-panel { max-height: 280px; overflow: hidden; display: flex; flex-direction: column; }
-.resistance-panel .panel-body { flex: 1; overflow-y: auto; }
-
-.drug-item {
-  display: grid; grid-template-columns: 80px 1fr 36px;
-  align-items: center; gap: 10px;
-  padding: 8px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.01);
-  transition: var(--transition);
+.alert-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
 }
 
-.drug-item:last-child { border-bottom: none; }
-.drug-item:hover { background: rgba(0, 216, 255, 0.01); }
+.alert-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
 
-.drug-label { font-size: 11px; font-weight: 500; color: var(--text-dim); }
+/* ═══════════════════════════════════════════════════════════
+   SECTION 6: CASES
+   ═══════════════════════════════════════════════════════════ */
+
+#cases {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
+.cases-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.cases-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cases-table thead th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-glass);
+  position: sticky;
+  top: 0;
+  background: var(--bg-deep);
+  z-index: 10;
+}
+
+.cases-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.2s ease;
+}
+
+.cases-table tbody tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.cases-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.case-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.source-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.source-badge.telegram { background: rgba(0,136,204,0.15); color: #0088CC; }
+.source-badge.whatsapp { background: rgba(37,211,102,0.12); color: #25D366; }
+.source-badge.ussd { background: rgba(245,158,11,0.12); color: var(--amber); }
+.source-badge.sms { background: rgba(167,139,250,0.12); color: var(--aurora-3); }
+.source-badge.manual { background: rgba(255,255,255,0.05); color: var(--text-dim); }
+
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.severity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.severity-dot.critical { background: var(--red); }
+.severity-dot.severe { background: #F97316; }
+.severity-dot.moderate { background: var(--amber); }
+.severity-dot.mild { background: var(--accent); }
+
+.district-tag {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.complaint-text {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.time-ago {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 7: RESISTANCE
+   ═══════════════════════════════════════════════════════════ */
+
+#resistance {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
+.resistance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .resistance-grid { grid-template-columns: 1fr; }
+}
+
+.resistance-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drug-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.drug-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  min-width: 110px;
+  text-align: right;
+}
 
 .drug-bar-track {
-  height: 5px; background: rgba(255,255,255,0.03);
-  border-radius: 3px; overflow: hidden;
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .drug-bar-fill {
-  height: 100%; border-radius: 3px;
-  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-}
-
-.drug-bar-fill::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08));
+  height: 100%;
+  border-radius: 4px;
+  width: 0%;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .drug-pct {
   font-family: var(--font-mono);
-  font-size: 11px; font-weight: 600;
-  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 40px;
 }
-
-/* ═══════════════════════════════════════════════
-   TRENDS SECTION
-   ═══════════════════════════════════════════════ */
-
-.trends-section { margin-bottom: 14px; }
-
-.trends-controls {
-  display: flex; align-items: center; gap: 10px;
-}
-
-.trend-select {
-  padding: 5px 10px; border-radius: var(--radius-sm);
-  background: var(--bg-glass); border: 1px solid var(--border);
-  color: var(--text-dim); font-size: 10px; font-weight: 500;
-  font-family: var(--font-body); cursor: pointer;
-  outline: none; transition: var(--transition);
-}
-
-.trend-select:hover, .trend-select:focus { border-color: var(--border-hover); color: var(--text); }
 
 .chart-wrapper {
-  padding: 10px 18px 14px;
-  height: 200px;
+  padding: 24px;
   position: relative;
 }
 
-/* ═══════════════════════════════════════════════
-   CASES SECTION
-   ═══════════════════════════════════════════════ */
-
-.cases-section { margin-bottom: 14px; }
-
-.cases-table {
-  width: 100%;
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 280px !important;
 }
 
-.cases-table th {
-  text-align: left;
-  padding: 10px 18px;
-  font-size: 9px; font-weight: 600; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.8px;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
+/* ═══════════════════════════════════════════════════════════
+   SECTION 8: CLOSE
+   ═══════════════════════════════════════════════════════════ */
+
+#close {
+  text-align: center;
+  min-height: 60vh;
 }
 
-.cases-table td {
-  padding: 9px 18px;
-  font-size: 11px; color: var(--text-dim);
-  border-bottom: 1px solid rgba(255,255,255,0.015);
-  white-space: nowrap;
+.close-heading {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2), var(--aurora-3));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 8s ease-in-out infinite;
 }
 
-.cases-table tr:last-child td { border-bottom: none; }
-.cases-table tr { transition: var(--transition); cursor: pointer; }
-.cases-table tr:hover { background: rgba(0, 216, 255, 0.015); }
-
-.source-badge {
-  display: inline-block;
-  padding: 2px 8px; border-radius: 4px;
-  font-size: 8px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.3px;
+.close-sub {
+  font-size: 16px;
+  color: var(--text-dim);
+  margin-bottom: 40px;
 }
 
-.source-badge.telegram { background: rgba(0, 216, 255, 0.1); color: var(--cyan); }
-.source-badge.whatsapp { background: rgba(45, 212, 191, 0.1); color: var(--emerald); }
-.source-badge.ussd { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
-.source-badge.sms { background: rgba(148, 155, 168, 0.1); color: var(--text-dim); }
-.source-badge.manual { background: rgba(167, 139, 250, 0.1); color: var(--purple); }
-
-.district-tag {
-  display: inline-block;
-  padding: 2px 8px; border-radius: 4px;
-  background: rgba(90, 97, 112, 0.08);
-  color: var(--text-muted); font-size: 9px; font-weight: 500;
+.close-links {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.case-id {
-  font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);
-}
-
-.severity-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 9px; font-weight: 600;
-}
-
-.severity-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-}
-
-.time-ago { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
-
-/* ═══════════════════════════════════════════════
-   FOOTER — LIVE BAR
-   ═══════════════════════════════════════════════ */
-
-.footer-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 24px;
-  background: linear-gradient(0deg, rgba(5, 8, 15, 0.95) 0%, rgba(5, 8, 15, 0.7) 60%, transparent 100%);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-}
-
-.footer-left {
-  display: flex; align-items: center; gap: 12px;
-}
-
-.footer-status {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10px; color: var(--text-muted); font-weight: 500;
-}
-
-.footer-counter {
-  font-size: 10px; color: var(--text-dim);
-}
-
-.footer-counter strong { color: var(--text); font-weight: 600; }
-
-.footer-right {
-  display: flex; align-items: center; gap: 16px;
-  font-size: 9px; color: var(--text-muted);
+.close-link {
   font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
 }
 
-.footer-updated {
-  font-size: 10px; color: var(--text-muted);
+.close-link:hover {
+  border-color: var(--aurora-2);
+  color: var(--aurora-2);
+  box-shadow: 0 0 20px rgba(45,212,191,0.1);
 }
 
-/* ═══════════════════════════════════════════════
-   UTILITY
-   ═══════════════════════════════════════════════ */
-
-.loading-skeleton {
-  background: linear-gradient(90deg,
-    var(--bg-glass) 25%,
-    rgba(255,255,255,0.02) 50%,
-    var(--bg-glass) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
+.footer {
+  margin-top: 80px;
+  padding: 24px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-glass);
 }
 
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+/* ═══════════════════════════════════════════════════════════
+   THE LIVING ORB
+   ═══════════════════════════════════════════════════════════ */
 
-.empty-state {
-  padding: 24px 18px; text-align: center;
-  font-size: 11px; color: var(--text-muted);
+#orb {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  z-index: 9999;
+  cursor: pointer;
+  animation: orbBreathe 4s ease-in-out infinite;
+  background: radial-gradient(circle at 35% 35%, var(--aurora-1), var(--aurora-2), var(--aurora-3));
+  box-shadow: 0 0 30px rgba(45,212,191,0.2), 0 0 60px rgba(74,222,128,0.1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
 }
 
-.no-select { user-select: none; }
-
-/* ═══════════════════════════════════════════════
-   ANIMATIONS
-   ═══════════════════════════════════════════════ */
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+#orb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 40px rgba(45,212,191,0.3), 0 0 80px rgba(74,222,128,0.15);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+#orb::after {
+  content: 'STAI';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.1em;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
+#orb:hover::after { opacity: 1; }
+
+@keyframes orbBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+#orb.alert-mode {
+  background: radial-gradient(circle at 35% 35%, var(--amber), var(--red));
+  box-shadow: 0 0 30px rgba(239,68,68,0.3);
+  animation: orbAlert 1s ease-in-out infinite;
 }
 
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 6px rgba(0, 216, 255, 0.1); }
-  50% { box-shadow: 0 0 16px rgba(0, 216, 255, 0.2); }
+@keyframes orbAlert {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
-.animate-in { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.animate-in-d1 { animation-delay: 0.05s; }
-.animate-in-d2 { animation-delay: 0.1s; }
-.animate-in-d3 { animation-delay: 0.15s; }
-.animate-in-d4 { animation-delay: 0.2s; }
-.animate-in-d5 { animation-delay: 0.25s; }
-.animate-in-d6 { animation-delay: 0.3s; }
-.animate-in-d7 { animation-delay: 0.35s; }
-.animate-in-d8 { animation-delay: 0.4s; }
+#orb.critical-flash {
+  animation: orbCritical 0.5s ease-out;
+}
 
-/* ═══════════════════════════════════════════════
+@keyframes orbCritical {
+  0% { transform: scale(1.3); box-shadow: 0 0 60px rgba(239,68,68,0.5); }
+  100% { transform: scale(1); box-shadow: 0 0 30px rgba(45,212,191,0.2); }
+}
+
+/* ═══════════════════════════════════════════════════════════
    RESPONSIVE
-   ═══════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════ */
 
-@media (max-width: 1200px) {
-  .content-grid { grid-template-columns: 1.1fr 1fr; }
-  .stats-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .stat-card { padding: 12px 16px; }
-  .stat-value { font-size: 24px; }
-}
-
-@media (max-width: 992px) {
-  .content-grid { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: repeat(3, 1fr); }
-  .stat-card:nth-child(4) { display: none; }
-  .stat-card:nth-child(5) { display: none; }
-}    @media (max-width: 768px) {
-  .header { padding: 10px 16px; height: 56px; }
-  .hero-stats { padding: 72px 12px 0; }
-  .main-content { padding: 10px 12px 70px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .stat-card:nth-child(3) { display: none; }
-  .stat-value { font-size: 22px; }
-  .logo-text { font-size: 15px; }
-  .status-badge { padding: 3px 8px; font-size: 8px; }
-  .header-btn { padding: 5px 10px; font-size: 9px; }
-  .header-time { display: none; }
-  .map-panel { min-height: 300px; }
-  .map-panel .panel-body { height: 300px; }
-  .chart-wrapper { height: 160px; }
-  .cases-table th, .cases-table td { padding: 8px 12px; font-size: 10px; }
+@media (max-width: 768px) {
+  .section { padding: 60px 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .channels-grid { grid-template-columns: 1fr; }
+  .alerts-grid { grid-template-columns: 1fr; }
   .cases-table .hide-mobile { display: none; }
-  .alerts-panel { max-height: 200px; }
-  .resistance-panel { max-height: 200px; }
-  .footer-bar { padding: 8px 12px; flex-direction: column; gap: 4px; }
+  .pipeline-flow { flex-direction: column; }
+  #orb { width: 48px; height: 48px; bottom: 16px; right: 16px; }
 }
 
-@media (max-width: 480px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .stat-value { font-size: 20px; }
-  .stat-card { padding: 10px 12px; }
-  .stat-label { font-size: 8px; }
-  .header-right .header-btn:not(.header-btn-primary) { display: none; }
-  .panel-body { padding: 0; }
-  .map-legend { font-size: 7px; gap: 8px; padding: 4px 10px; }
-  .map-zoom-hint { display: none; }
-  .alerts-panel { max-height: 180px; }
-  .resistance-panel { max-height: 180px; }
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal, .reveal-left, .reveal-right, .reveal-scale {
+    opacity: 1;
+    transform: none;
+  }
+  .vision-text .word { opacity: 1; transform: none; }
 }
-
-/* ═══ Transitions for smooth data updates ═══ */
-.stat-value.loading { opacity: 0.3; }
 </style>
 </head>
 <body>
 
-<div class="noise-overlay"></div>
+<!-- Aurora mesh background -->
+<div class="aurora-mesh" aria-hidden="true">
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+</div>
 
-<!-- ═══ HEADER ═══ -->
-<header class="header" role="banner">
-  <div class="header-left">
-    <a href="#" class="logo" aria-label="UDARA Home">
-      <div class="logo-icon">U</div>
-      <span class="logo-text">UDARA <span class="logo-sup">v2.0</span></span>
-    </a>
-    <div class="status-badge" id="status-badge">
-      <span class="status-dot" id="status-dot"></span>
-      <span id="status-text">LIVE</span>
-    </div>
+<!-- ═══ SECTION 0: HERO ═══ -->
+<section id="hero" class="section" data-orb-mode="default">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <div class="hero-content">
+    <div class="hero-logo reveal">STAI</div>
+    <div class="hero-subtitle reveal delay-1">Sentri Intelligence</div>
+    <p class="hero-tagline reveal delay-2">Real-time antimicrobial resistance surveillance across Africa. Report via Telegram, WhatsApp, and SMS.</p>
   </div>
-  <div class="header-right">
-    <span class="header-time" id="header-time">--:--:-- UTC</span>
-    <a href="https://t.me/UdaraBot" target="_blank" class="header-btn" rel="noopener">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
-      Telegram
-    </a>
-    <button class="header-btn" onclick="window.location.reload()" title="Refresh data">Refresh</button>
-    <a href="/docs" class="header-btn header-btn-primary" target="_blank">API</a>
+  <div class="scroll-indicator" aria-hidden="true">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
   </div>
-</header>
+</section>
 
-<!-- ═══ HERO STATS ═══ -->
-<section class="hero-stats" aria-label="Key metrics">
-  <div class="stats-grid">
-    <div class="stat-card animate-in animate-in-d1" id="stat-total">
-      <div class="stat-glow" style="background: radial-gradient(circle, var(--cyan), transparent);"></div>
-      <div class="stat-label">Total Cases</div>
-      <div class="stat-value" id="val-cases" style="color: var(--cyan);">—</div>
-      <div class="stat-change" id="change-cases"></div>
-    </div>
-    <div class="stat-card animate-in animate-in-d2" id="stat-alerts">
-      <div class="stat-glow" style="background: radial-gradient(circle, var(--coral), transparent);"></div>
-      <div class="stat-label">Active Alerts</div>
-      <div class="stat-value" id="val-alerts" style="color: var(--coral);">—</div>
-      <div class="stat-change" id="change-alerts"></div>
-    </div>
-    <div class="stat-card animate-in animate-in-d3" id="stat-resistance">
-      <div class="stat-glow" style="background: radial-gradient(circle, var(--amber), transparent);"></div>
-      <div class="stat-label">Avg Resistance</div>
-      <div class="stat-value" id="val-resistance" style="color: var(--amber);">—%</div>
-      <div class="stat-change" id="change-resistance"></div>
-    </div>
-    <div class="stat-card animate-in animate-in-d4" id="stat-districts">
-      <div class="stat-glow" style="background: radial-gradient(circle, var(--emerald), transparent);"></div>
-      <div class="stat-label">Districts</div>
-      <div class="stat-value" id="val-districts" style="color: var(--emerald);">—</div>
-      <div class="stat-change" id="change-districts"></div>
-    </div>
-    <div class="stat-card animate-in animate-in-d5" id="stat-week">
-      <div class="stat-glow" style="background: radial-gradient(circle, var(--purple), transparent);"></div>
-      <div class="stat-label">This Week</div>
-      <div class="stat-value" id="val-week" style="color: var(--purple);">—</div>
-      <div class="stat-change" id="change-week"></div>
+<!-- ═══ SECTION 1: THE CRISIS ═══ -->
+<section id="crisis" class="section" data-orb-mode="alert">
+  <div class="section-inner">
+    <div class="crisis-number reveal mono" data-count="1270000" data-suffix="">0</div>
+    <div class="crisis-label reveal delay-1">deaths per year from drug-resistant infections</div>
+    <div class="stats-grid">
+      <div class="stat-card glass reveal delay-2">
+        <div class="stat-value mono" data-count="250">0</div>
+        <div class="stat-label">Cases Reported</div>
+        <div class="stat-change up">&#8593; 12.5%</div>
+      </div>
+      <div class="stat-card glass reveal delay-3">
+        <div class="stat-value mono" data-count="15">0</div>
+        <div class="stat-label">Districts Covered</div>
+      </div>
+      <div class="stat-card glass reveal delay-4">
+        <div class="stat-value mono" data-count="12">0</div>
+        <div class="stat-label">Drugs Tracked</div>
+      </div>
+      <div class="stat-card glass reveal delay-5">
+        <div class="stat-value mono" data-count="10">0</div>
+        <div class="stat-label">Active Alerts</div>
+        <div class="stat-change down">&#8595; 8.3%</div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ MAIN CONTENT ═══ -->
-<main class="main-content" role="main">
-
-  <!-- Content Grid: Globe + Alerts/Resistance -->
-  <div class="content-grid">
-
-    <!-- LEFT: Map -->
-    <div class="glass-panel map-panel animate-in animate-in-d6">
-      <div class="panel-header">
-        <span class="panel-title">Resistance Map</span>
-        <span class="panel-badge" id="globe-badge">— districts</span>
-      </div>
-      <div class="panel-body" id="globe-body">
-        <div class="map-legend">
-          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#EF4444;"></span> &gt;50%</span>
-          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#F59E0B;"></span> 25–50%</span>
-          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#00D8FF;"></span> 10–25%</span>
-          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:#2DD4BF;"></span> &lt;10%</span>
-        </div>
-        <div class="map-zoom-hint">Scroll · Drag · Hover</div>
-      </div>
-    </div>
-
-    <!-- RIGHT: Stacked panels -->
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-
-      <!-- Alerts Panel -->
-      <div class="glass-panel alerts-panel animate-in animate-in-d7">
-        <div class="panel-header">
-          <span class="panel-title">Alerts</span>
-          <span class="panel-badge" id="alerts-badge">— active</span>
-        </div>
-        <div class="panel-body" id="alerts-body">
-          <div class="empty-state">Loading alerts…</div>
-        </div>
-      </div>
-
-      <!-- Drug Resistance Panel -->
-      <div class="glass-panel resistance-panel animate-in animate-in-d8">
-        <div class="panel-header">
-          <span class="panel-title">Drug Resistance</span>
-          <span class="panel-badge" id="drugs-badge">— drugs</span>
-        </div>
-        <div class="panel-body" id="drugs-body">
-          <div class="empty-state">Loading resistance data…</div>
-        </div>
-      </div>
-
+<!-- ═══ SECTION 2: THE VISION ═══ -->
+<section id="vision" class="section" data-orb-mode="bright">
+  <div class="section-inner">
+    <div class="vision-text" id="vision-text">
+      <span class="word">STAI</span>
+      <span class="word">sees</span>
+      <span class="word highlight">resistance</span>
+      <span class="word">before</span>
+      <span class="word">it</span>
+      <span class="word highlight">spreads.</span>
     </div>
   </div>
+</section>
 
-  <!-- Trends Section -->
-  <div class="glass-panel trends-section animate-in animate-in-d2" id="trends-panel">
-    <div class="panel-header">
-      <span class="panel-title">Resistance Trends (30 Days)</span>
-      <div class="trends-controls">
-        <span style="font-size:9px;color:var(--text-muted);font-weight:500;">Drug:</span>
-        <select class="trend-select" id="trend-drug-select">
-          <option value="">All Drugs</option>
-        </select>
+<!-- ═══ SECTION 3: HOW IT WORKS ═══ -->
+<section id="how-it-works" class="section" data-orb-mode="default">
+  <div class="section-inner">
+    <div class="section-title reveal">How It Works</div>
+    <h2 class="section-heading reveal delay-1">Three Channels. One Intelligence.</h2>
+    <p class="section-desc reveal delay-2">Community health workers report cases through the tools they already use. STAI processes every report into structured surveillance data.</p>
+    <div class="channels-grid">
+      <div class="channel-card glass reveal delay-3">
+        <span class="channel-icon">&#9993;</span>
+        <div class="channel-name">Telegram</div>
+        <div class="channel-desc">Bot-guided case reporting with symptom checklists and geolocation tagging.</div>
+      </div>
+      <div class="channel-card glass reveal delay-4">
+        <span class="channel-icon">&#128172;</span>
+        <div class="channel-name">WhatsApp</div>
+        <div class="channel-desc">Meta Business API integration for conversational case submission and alerts.</div>
+      </div>
+      <div class="channel-card glass reveal delay-5">
+        <span class="channel-icon">&#128241;</span>
+        <div class="channel-name">SMS / USSD</div>
+        <div class="channel-desc">Works on any phone. Structured codes for rapid field reporting without internet.</div>
       </div>
     </div>
-    <div class="panel-body">
-      <div class="chart-wrapper">
-        <canvas id="trends-chart"></canvas>
+    <div class="pipeline-flow reveal delay-6">
+      <div class="pipeline-step glass">Field Report</div>
+      <span class="pipeline-arrow">&#8594;</span>
+      <div class="pipeline-step glass">STAI Processes</div>
+      <span class="pipeline-arrow">&#8594;</span>
+      <div class="pipeline-step glass" style="border-color: rgba(45,212,191,0.2);">Structured Data</div>
+      <span class="pipeline-arrow">&#8594;</span>
+      <div class="pipeline-step glass" style="border-color: rgba(74,222,128,0.2);">Dashboard</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 4: LIVE MAP ═══ -->
+<section id="live-map" class="section" data-orb-mode="map">
+  <div class="section-inner">
+    <div class="section-title reveal">Live Surveillance</div>
+    <h2 class="section-heading reveal delay-1">Africa Under Watch</h2>
+    <p class="section-desc reveal delay-2">15 districts. Real-time resistance data. Every dot tells a story.</p>
+    <div class="map-container glass reveal-scale delay-3" id="map-container">
+      <div class="map-tooltip" id="map-tooltip"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 5: ALERTS ═══ -->
+<section id="alerts" class="section" data-orb-mode="alert">
+  <div class="section-inner">
+    <div class="section-title reveal">Active Threats</div>
+    <h2 class="section-heading reveal delay-1">Alerts</h2>
+    <p class="section-desc reveal delay-2">Critical resistance events detected across the network.</p>
+    <div class="alerts-grid" id="alerts-grid"></div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 6: CASES ═══ -->
+<section id="cases" class="section" data-orb-mode="default">
+  <div class="section-inner">
+    <div class="section-title reveal">Field Reports</div>
+    <h2 class="section-heading reveal delay-1">Cases</h2>
+    <div class="cases-wrapper glass reveal delay-2" style="padding: 0; overflow: hidden;">
+      <table class="cases-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Source</th>
+            <th>Complaint</th>
+            <th class="hide-mobile">District</th>
+            <th class="hide-mobile">Severity</th>
+            <th class="hide-mobile">Patient</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="cases-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 7: RESISTANCE ═══ -->
+<section id="resistance" class="section" data-orb-mode="default">
+  <div class="section-inner">
+    <div class="section-title reveal">The Drug War</div>
+    <h2 class="section-heading reveal delay-1">Resistance Patterns</h2>
+    <p class="section-desc reveal delay-2">Drug resistance percentages across all monitored districts.</p>
+    <div class="resistance-grid">
+      <div class="resistance-bars reveal delay-3" id="resistance-bars"></div>
+      <div class="chart-wrapper glass reveal delay-4">
+        <canvas id="trend-chart"></canvas>
       </div>
     </div>
   </div>
+</section>
 
-  <!-- Cases Section -->
-  <div class="glass-panel cases-section animate-in animate-in-d3" id="cases-panel">
-    <div class="panel-header">
-      <span class="panel-title">Recent Cases</span>
-      <span class="panel-badge" id="cases-badge">— total</span>
+<!-- ═══ SECTION 8: CLOSE ═══ -->
+<section id="close" class="section" data-orb-mode="fade">
+  <div class="section-inner">
+    <h2 class="close-heading reveal">Built for Africa.<br>Built for the World.</h2>
+    <p class="close-sub reveal delay-1">Sentri Intelligence &mdash; AMR surveillance that works where it matters most.</p>
+    <div class="close-links reveal delay-2">
+      <a href="https://github.com/teaminnovatorx" class="close-link" target="_blank">GitHub</a>
+      <a href="#hero" class="close-link">Back to Top</a>
     </div>
-    <div class="panel-body">
-      <div style="overflow-x: auto;">
-        <table class="cases-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Source</th>
-              <th>Complaint</th>
-              <th class="hide-mobile">District</th>
-              <th class="hide-mobile">Severity</th>
-              <th class="hide-mobile">Age/Sex</th>
-              <th>When</th>
-            </tr>
-          </thead>
-          <tbody id="cases-body">
-            <tr><td colspan="7" class="empty-state">Loading cases…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="footer">
+      <p>STAI &mdash; Sentri Intelligence &copy; 2026. Open-source AMR surveillance.</p>
     </div>
   </div>
+</section>
 
-</main>
-
-<!-- ═══ FOOTER ═══ -->
-<footer class="footer-bar" role="contentinfo">
-  <div class="footer-left">
-    <div class="footer-status">
-      <span class="status-dot"></span>
-      <span>System Operational</span>
-    </div>
-    <div class="footer-counter">
-      <strong id="footer-cases">—</strong> cases · <strong id="footer-alerts">—</strong> alerts · <strong id="footer-districts">—</strong> districts
-    </div>
-  </div>
-  <div class="footer-right">
-    <span class="footer-updated" id="footer-updated">Updating…</span>
-  </div>
-</footer>
+<!-- ═══ THE LIVING ORB ═══ -->
+<div id="orb" role="button" aria-label="STAI companion orb" tabindex="0"></div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   UDARA — BioLume Command Center
+   STAI — JavaScript Engine
    ═══════════════════════════════════════════════════════════ */
 
-const API = window.location.origin;
-const $ = id => document.getElementById(id);
-const $$ = q => document.querySelectorAll(q);
-
-// ── Demo data for static hosting (GitHub Pages) ──
-const DEMO = {
-  '/api/v1/stats/dashboard': {
-    total_cases: 250, total_cases_change: 12.5, active_alerts: 10,
-    active_alerts_change: -8.3, avg_resistance_pct: 38.4, avg_resistance_change: 3.2,
-    active_chws: 45, active_chws_change: 5.0, cases_this_week: 47, districts_covered: 15, period: '7d',
-  },
-  '/api/v1/alerts?per_page=8': {
-    total: 10, alerts: [
-      { severity: 'critical', title: 'Ciprofloxacin-Resistant E. coli Outbreak', message: 'Lagos Island: 67% of E. coli isolates resistant to ciprofloxacin. Cluster linked to contaminated water source.', district: 'Lagos', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 3600000 * 4).toISOString() },
-      { severity: 'critical', title: 'Carbapenem Resistance Emerging', message: 'Cliniques Universitaires: K. pneumoniae resistant to meropenem. Last-resort antibiotics compromised.', district: 'Kinshasa', drug: 'Meropenem', created_at: new Date(Date.now() - 3600000 * 8).toISOString() },
-      { severity: 'critical', title: 'MRSA-like Penicillin Resistance in Accra', message: 'Korle Bu: 78% S. aureus resistant to penicillin. Wound infection cluster in surgical ward.', district: 'Accra', drug: 'Penicillin', created_at: new Date(Date.now() - 3600000 * 12).toISOString() },
-      { severity: 'high', title: 'ESBL-Producing K. pneumoniae Cluster', message: 'Kenyatta National Hospital: 5 MDR K. pneumoniae cases in ICU. Resistance to 3rd-gen cephalosporins confirmed.', district: 'Nairobi', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 3600000 * 18).toISOString() },
-      { severity: 'high', title: 'Azithromycin-Resistant Gonorrhea Surge', message: 'Mulago region: 44% of N. gonorrhoeae isolates resistant. STI surveillance clinic reporting treatment failures.', district: 'Kampala', drug: 'Azithromycin', created_at: new Date(Date.now() - 3600000 * 24).toISOString() },
-      { severity: 'high', title: 'MDR Pseudomonas in ICU', message: 'Chris Hani Baragwanath ICU: Multi-drug resistant P. aeruginosa. Limited treatment options remain.', district: 'Johannesburg', drug: 'Gentamicin', created_at: new Date(Date.now() - 3600000 * 36).toISOString() },
-      { severity: 'medium', title: 'ESBL E. coli in Coastal Kenya', message: 'Coastal General: ESBL-producing E. coli in pediatric UTI cases. Linked to poultry antibiotic use.', district: 'Mombasa', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 3600000 * 48).toISOString() },
-      { severity: 'medium', title: 'Ciprofloxacin-Resistant Typhoid', message: 'Black Lion Hospital: Ciprofloxacin resistance in S. typhi rising. Azithromycin alternative showing efficacy.', district: 'Addis Ababa', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 3600000 * 72).toISOString() },
-    ],
-  },
-  '/api/v1/resistance/map': {
-    features: [
-      { district: 'Lagos', region: 'West Africa', lat: 6.5244, lng: 3.3792, avg_resistance_pct: 52.3, top_drug: 'Amoxicillin', top_resistance: 72, drugs_count: 12, active_alerts: 2, drugs: [{ drug: 'Amoxicillin', resistance_pct: 72 }, { drug: 'Penicillin', resistance_pct: 65 }, { drug: 'Ciprofloxacin', resistance_pct: 67 }, { drug: 'Erythromycin', resistance_pct: 48 }] },
-      { district: 'Accra', region: 'West Africa', lat: 5.6037, lng: -0.187, avg_resistance_pct: 45.1, top_drug: 'Penicillin', top_resistance: 78, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Penicillin', resistance_pct: 78 }, { drug: 'Amoxicillin', resistance_pct: 62 }, { drug: 'Erythromycin', resistance_pct: 41 }] },
-      { district: 'Nairobi', region: 'East Africa', lat: -1.2921, lng: 36.8219, avg_resistance_pct: 38.7, top_drug: 'Ceftriaxone', top_resistance: 52, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', resistance_pct: 52 }, { drug: 'Ciprofloxacin', resistance_pct: 35 }, { drug: 'Gentamicin', resistance_pct: 28 }] },
-      { district: 'Kampala', region: 'East Africa', lat: 0.3476, lng: 32.5825, avg_resistance_pct: 34.2, top_drug: 'Azithromycin', top_resistance: 44, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Azithromycin', resistance_pct: 44 }, { drug: 'Penicillin', resistance_pct: 38 }, { drug: 'Doxycycline', resistance_pct: 22 }] },
-      { district: 'Kinshasa', region: 'Central Africa', lat: -4.4419, lng: 15.2663, avg_resistance_pct: 41.8, top_drug: 'Meropenem', top_resistance: 72, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Meropenem', resistance_pct: 72 }, { drug: 'Ceftriaxone', resistance_pct: 45 }, { drug: 'Gentamicin', resistance_pct: 38 }] },
-      { district: 'Johannesburg', region: 'Southern Africa', lat: -26.2041, lng: 28.0473, avg_resistance_pct: 36.5, top_drug: 'Gentamicin', top_resistance: 48, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Gentamicin', resistance_pct: 48 }, { drug: 'Ciprofloxacin', resistance_pct: 32 }, { drug: 'Ceftriaxone', resistance_pct: 25 }] },
-      { district: 'Dar es Salaam', region: 'East Africa', lat: -6.7924, lng: 39.2083, avg_resistance_pct: 29.4, top_drug: 'Amoxicillin', top_resistance: 55, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', resistance_pct: 55 }, { drug: 'Penicillin', resistance_pct: 42 }, { drug: 'Erythromycin', resistance_pct: 28 }] },
-      { district: 'Addis Ababa', region: 'East Africa', lat: 9.032, lng: 38.7469, avg_resistance_pct: 31.6, top_drug: 'Ciprofloxacin', top_resistance: 38, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Ciprofloxacin', resistance_pct: 38 }, { drug: 'Amoxicillin', resistance_pct: 45 }, { drug: 'Penicillin', resistance_pct: 30 }] },
-      { district: 'Mombasa', region: 'East Africa', lat: -4.0435, lng: 39.6682, avg_resistance_pct: 33.1, top_drug: 'Ceftriaxone', top_resistance: 41, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', resistance_pct: 41 }, { drug: 'Amoxicillin', resistance_pct: 48 }, { drug: 'Doxycycline', resistance_pct: 18 }] },
-      { district: 'Lusaka', region: 'Southern Africa', lat: -15.3875, lng: 28.3228, avg_resistance_pct: 27.8, top_drug: 'Penicillin', top_resistance: 45, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Penicillin', resistance_pct: 45 }, { drug: 'Erythromycin', resistance_pct: 32 }, { drug: 'Amoxicillin', resistance_pct: 38 }] },
-      { district: 'Harare', region: 'Southern Africa', lat: -17.8252, lng: 31.0335, avg_resistance_pct: 25.3, top_drug: 'Erythromycin', top_resistance: 40, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Erythromycin', resistance_pct: 40 }, { drug: 'Penicillin', resistance_pct: 35 }, { drug: 'Amoxicillin', resistance_pct: 30 }] },
-      { district: 'Lilongwe', region: 'Southern Africa', lat: -13.9626, lng: 33.7741, avg_resistance_pct: 30.2, top_drug: 'Penicillin', top_resistance: 35, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Penicillin', resistance_pct: 35 }, { drug: 'Amoxicillin', resistance_pct: 42 }, { drug: 'Ciprofloxacin', resistance_pct: 20 }] },
-      { district: 'Kumasi', region: 'West Africa', lat: 6.6885, lng: -1.6244, avg_resistance_pct: 39.7, top_drug: 'Amoxicillin', top_resistance: 60, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', resistance_pct: 60 }, { drug: 'Penicillin', resistance_pct: 52 }, { drug: 'Ciprofloxacin', resistance_pct: 28 }] },
-      { district: 'Abuja', region: 'West Africa', lat: 9.0765, lng: 7.3986, avg_resistance_pct: 35.4, top_drug: 'Clindamycin', top_resistance: 33, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Clindamycin', resistance_pct: 33 }, { drug: 'Amoxicillin', resistance_pct: 50 }, { drug: 'Penicillin', resistance_pct: 42 }] },
-      { district: 'Dakar', region: 'West Africa', lat: 14.7167, lng: -17.4677, avg_resistance_pct: 28.9, top_drug: 'Amoxicillin', top_resistance: 48, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', resistance_pct: 48 }, { drug: 'Penicillin', resistance_pct: 40 }, { drug: 'Ciprofloxacin', resistance_pct: 18 }] },
-    ],
-  },
+// ── Demo Data ──
+const DISTRICT_COORDS = {
+  "Lagos": [3.3792, 6.5244], "Accra": [-0.187, 5.6037], "Kumasi": [-1.6244, 6.6885],
+  "Abuja": [7.3986, 9.0765], "Dakar": [-17.4677, 14.7167], "Nairobi": [36.8219, -1.2921],
+  "Dar es Salaam": [39.2083, -6.7924], "Kampala": [32.5825, 0.3476], "Addis Ababa": [38.7469, 9.032],
+  "Mombasa": [39.6682, -4.0435], "Lusaka": [28.3228, -15.3875], "Harare": [31.0335, -17.8252],
+  "Lilongwe": [33.7741, -13.9626], "Johannesburg": [28.0473, -26.2041], "Kinshasa": [15.2663, -4.4419]
 };
 
-// Build trends demo
-(function() {
-  const dates = [];
-  for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dates.push(d.toISOString().slice(0,10)); }
-  const base = { 'Amoxicillin - Lagos': 68, 'Ciprofloxacin - Lagos': 62, 'Ceftriaxone - Nairobi': 48, 'Penicillin - Accra': 74, 'Meropenem - Kinshasa': 65, 'Gentamicin - Johannesburg': 44 };
-  const series = {};
-  Object.entries(base).forEach(([k, v]) => { series[k] = dates.map((_, i) => +(v + (i - 15) * 0.6 + Math.sin(i) * 2).toFixed(1)); });
-  DEMO['/api/v1/resistance/trends'] = { dates, series };
-  DEMO['/api/v1/resistance/trends?'] = { dates, series };
-})();
+const DISTRICTS = [
+  { district: 'Lagos', region: 'West Africa', avg_resistance_pct: 52.3, top_drug: 'Amoxicillin', top_resistance: 72, active_alerts: 2, drugs: [{drug:'Amoxicillin',resistance_pct:72},{drug:'Ciprofloxacin',resistance_pct:67},{drug:'Penicillin',resistance_pct:65},{drug:'Erythromycin',resistance_pct:48}] },
+  { district: 'Accra', region: 'West Africa', avg_resistance_pct: 45.1, top_drug: 'Penicillin', top_resistance: 78, active_alerts: 1, drugs: [{drug:'Penicillin',resistance_pct:78},{drug:'Amoxicillin',resistance_pct:62},{drug:'Erythromycin',resistance_pct:41}] },
+  { district: 'Nairobi', region: 'East Africa', avg_resistance_pct: 38.7, top_drug: 'Ceftriaxone', top_resistance: 52, active_alerts: 1, drugs: [{drug:'Ceftriaxone',resistance_pct:52},{drug:'Ciprofloxacin',resistance_pct:35},{drug:'Gentamicin',resistance_pct:28}] },
+  { district: 'Kampala', region: 'East Africa', avg_resistance_pct: 34.2, top_drug: 'Azithromycin', top_resistance: 44, active_alerts: 1, drugs: [{drug:'Azithromycin',resistance_pct:44},{drug:'Penicillin',resistance_pct:38},{drug:'Doxycycline',resistance_pct:22}] },
+  { district: 'Kinshasa', region: 'Central Africa', avg_resistance_pct: 41.8, top_drug: 'Meropenem', top_resistance: 72, active_alerts: 1, drugs: [{drug:'Meropenem',resistance_pct:72},{drug:'Ceftriaxone',resistance_pct:45},{drug:'Gentamicin',resistance_pct:38}] },
+  { district: 'Johannesburg', region: 'Southern Africa', avg_resistance_pct: 36.5, top_drug: 'Gentamicin', top_resistance: 48, active_alerts: 1, drugs: [{drug:'Gentamicin',resistance_pct:48},{drug:'Ciprofloxacin',resistance_pct:32},{drug:'Ceftriaxone',resistance_pct:25}] },
+  { district: 'Dar es Salaam', region: 'East Africa', avg_resistance_pct: 29.4, top_drug: 'Amoxicillin', top_resistance: 55, active_alerts: 0, drugs: [{drug:'Amoxicillin',resistance_pct:55},{drug:'Penicillin',resistance_pct:42},{drug:'Erythromycin',resistance_pct:28}] },
+  { district: 'Addis Ababa', region: 'East Africa', avg_resistance_pct: 31.6, top_drug: 'Ciprofloxacin', top_resistance: 38, active_alerts: 1, drugs: [{drug:'Ciprofloxacin',resistance_pct:38},{drug:'Amoxicillin',resistance_pct:45},{drug:'Penicillin',resistance_pct:30}] },
+  { district: 'Mombasa', region: 'East Africa', avg_resistance_pct: 33.1, top_drug: 'Ceftriaxone', top_resistance: 41, active_alerts: 1, drugs: [{drug:'Ceftriaxone',resistance_pct:41},{drug:'Amoxicillin',resistance_pct:48},{drug:'Doxycycline',resistance_pct:18}] },
+  { district: 'Lusaka', region: 'Southern Africa', avg_resistance_pct: 27.8, top_drug: 'Penicillin', top_resistance: 45, active_alerts: 0, drugs: [{drug:'Penicillin',resistance_pct:45},{drug:'Erythromycin',resistance_pct:32},{drug:'Amoxicillin',resistance_pct:38}] },
+  { district: 'Harare', region: 'Southern Africa', avg_resistance_pct: 25.3, top_drug: 'Erythromycin', top_resistance: 40, active_alerts: 0, drugs: [{drug:'Erythromycin',resistance_pct:40},{drug:'Penicillin',resistance_pct:35},{drug:'Amoxicillin',resistance_pct:30}] },
+  { district: 'Lilongwe', region: 'Southern Africa', avg_resistance_pct: 30.2, top_drug: 'Penicillin', top_resistance: 35, active_alerts: 1, drugs: [{drug:'Penicillin',resistance_pct:35},{drug:'Amoxicillin',resistance_pct:42},{drug:'Ciprofloxacin',resistance_pct:20}] },
+  { district: 'Kumasi', region: 'West Africa', avg_resistance_pct: 39.7, top_drug: 'Amoxicillin', top_resistance: 60, active_alerts: 0, drugs: [{drug:'Amoxicillin',resistance_pct:60},{drug:'Penicillin',resistance_pct:52},{drug:'Ciprofloxacin',resistance_pct:28}] },
+  { district: 'Abuja', region: 'West Africa', avg_resistance_pct: 35.4, top_drug: 'Clindamycin', top_resistance: 33, active_alerts: 1, drugs: [{drug:'Clindamycin',resistance_pct:33},{drug:'Amoxicillin',resistance_pct:50},{drug:'Penicillin',resistance_pct:42}] },
+  { district: 'Dakar', region: 'West Africa', avg_resistance_pct: 28.9, top_drug: 'Amoxicillin', top_resistance: 48, active_alerts: 0, drugs: [{drug:'Amoxicillin',resistance_pct:48},{drug:'Penicillin',resistance_pct:40},{drug:'Ciprofloxacin',resistance_pct:18}] }
+];
 
-DEMO['/api/v1/cases?per_page=12'] = {
-  total: 250, cases: [
-    { case_id: 'a1b2c3d4', source: 'telegram', complaint: 'Fever with chills for 5 days, no response to amoxicillin', district: 'Lagos', severity: 'severe', patient_age_years: 34, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 2).toISOString() },
-    { case_id: 'e5f6g7h8', source: 'whatsapp', complaint: 'Productive cough with yellow sputum, chest pain on deep breathing', district: 'Nairobi', severity: 'moderate', patient_age_years: 28, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 5).toISOString() },
-    { case_id: 'i9j0k1l2', source: 'telegram', complaint: 'Burning urination, frequency, suprapubic pain for 3 days', district: 'Accra', severity: 'mild', patient_age_years: 45, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 8).toISOString() },
-    { case_id: 'm3n4o5p6', source: 'ussd', complaint: 'Infected surgical wound with purulent discharge, erythema spreading', district: 'Kampala', severity: 'critical', patient_age_years: 62, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 12).toISOString() },
-    { case_id: 'q7r8s9t0', source: 'whatsapp', complaint: 'Persistent watery diarrhea with dehydration signs, 4 days', district: 'Kinshasa', severity: 'moderate', patient_age_years: 8, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 16).toISOString() },
-    { case_id: 'u1v2w3x4', source: 'telegram', complaint: 'Severe headache, neck stiffness, photophobia, fever 39.5C', district: 'Lagos', severity: 'critical', patient_age_years: 19, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 20).toISOString() },
-    { case_id: 'y5z6a7b8', source: 'manual', complaint: 'Joint pain with swelling, heat, limited range of motion — right knee', district: 'Johannesburg', severity: 'moderate', patient_age_years: 55, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 24).toISOString() },
-    { case_id: 'c9d0e1f2', source: 'sms', complaint: 'Non-healing ulcer on foot, surrounding cellulitis, diabetic patient', district: 'Dar es Salaam', severity: 'severe', patient_age_years: 71, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 30).toISOString() },
-    { case_id: 'g3h4i5j6', source: 'telegram', complaint: 'High fever with rash, myalgia, severe fatigue — 3 days', district: 'Addis Ababa', severity: 'moderate', patient_age_years: 25, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 36).toISOString() },
-    { case_id: 'k7l8m9n0', source: 'whatsapp', complaint: 'Dysuria with cloudy urine, foul odor, previous UTI history', district: 'Mombasa', severity: 'mild', patient_age_years: 38, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 42).toISOString() },
-    { case_id: 'o1p2q3r4', source: 'ussd', complaint: 'Chest congestion, wheezing, green sputum, SOB on exertion', district: 'Lusaka', severity: 'moderate', patient_age_years: 50, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 48).toISOString() },
-    { case_id: 's5t6u7v8', source: 'telegram', complaint: 'Purulent conjunctivitis, eye discharge, crusting on eyelids', district: 'Kumasi', severity: 'mild', patient_age_years: 4, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 55).toISOString() },
-  ],
+const ARC_PAIRS = [
+  ['Lagos','Accra'],['Nairobi','Mombasa'],['Kampala','Nairobi'],
+  ['Johannesburg','Lusaka'],['Kinshasa','Lagos'],['Addis Ababa','Nairobi'],
+  ['Accra','Kumasi'],['Dar es Salaam','Mombasa'],['Harare','Lusaka'],
+  ['Abuja','Lagos'],['Dakar','Accra'],['Lilongwe','Lusaka']
+];
+
+const ALERTS = [
+  { severity:'critical', title:'Ciprofloxacin-Resistant E. coli Outbreak', message:'Lagos Island: 67% of E. coli isolates resistant to ciprofloxacin. Cluster linked to contaminated water source.', district:'Lagos', drug:'Ciprofloxacin', time:'4h ago' },
+  { severity:'critical', title:'Carbapenem Resistance Emerging', message:'Cliniques Universitaires: K. pneumoniae resistant to meropenem. Last-resort antibiotics compromised.', district:'Kinshasa', drug:'Meropenem', time:'8h ago' },
+  { severity:'critical', title:'MRSA-like Penicillin Resistance in Accra', message:'Korle Bu: 78% S. aureus resistant to penicillin. Wound infection cluster in surgical ward.', district:'Accra', drug:'Penicillin', time:'12h ago' },
+  { severity:'high', title:'ESBL-Producing K. pneumoniae Cluster', message:'Kenyatta National Hospital: 5 MDR K. pneumoniae cases in ICU. Resistance to 3rd-gen cephalosporins confirmed.', district:'Nairobi', drug:'Ceftriaxone', time:'18h ago' },
+  { severity:'high', title:'Azithromycin-Resistant Gonorrhea Surge', message:'Mulago region: 44% of N. gonorrhoeae isolates resistant. STI clinic reporting treatment failures.', district:'Kampala', drug:'Azithromycin', time:'1d ago' },
+  { severity:'high', title:'MDR Pseudomonas in ICU', message:'Chris Hani Baragwanath ICU: Multi-drug resistant P. aeruginosa. Limited treatment options remain.', district:'Johannesburg', drug:'Gentamicin', time:'1.5d ago' },
+  { severity:'medium', title:'ESBL E. coli in Coastal Kenya', message:'Coastal General: ESBL-producing E. coli in pediatric UTI cases. Linked to poultry antibiotic use.', district:'Mombasa', drug:'Ceftriaxone', time:'2d ago' },
+  { severity:'medium', title:'Ciprofloxacin-Resistant Typhoid', message:'Black Lion Hospital: Ciprofloxacin resistance in S. typhi rising. Azithromycin alternative showing efficacy.', district:'Addis Ababa', drug:'Ciprofloxacin', time:'3d ago' },
+  { severity:'medium', title:'Penicillin-Resistant Pneumococcal Meningitis', message:'Kamuzu Central: Penicillin MICs rising in S. pneumoniae meningitis. Switch to ceftriaxone protocol.', district:'Lilongwe', drug:'Penicillin', time:'3d ago' },
+  { severity:'medium', title:'Clindamycin Resistance in SSTIs', message:'National Hospital: 33% S. aureus from skin infections resistant to clindamycin. Inducible resistance mechanism.', district:'Abuja', drug:'Clindamycin', time:'4d ago' }
+];
+
+const CASES = [
+  { id:'a1b2c3', source:'telegram', complaint:'Fever with chills for 5 days, no response to amoxicillin', district:'Lagos', severity:'severe', age:34, sex:'male', time:'2h ago' },
+  { id:'e5f6g7', source:'whatsapp', complaint:'Productive cough with yellow sputum, chest pain on deep breathing', district:'Nairobi', severity:'moderate', age:28, sex:'female', time:'5h ago' },
+  { id:'i9j0k1', source:'telegram', complaint:'Burning urination, frequency, suprapubic pain for 3 days', district:'Accra', severity:'mild', age:45, sex:'female', time:'8h ago' },
+  { id:'m3n4o5', source:'ussd', complaint:'Infected surgical wound with purulent discharge, erythema spreading', district:'Kampala', severity:'critical', age:62, sex:'male', time:'12h ago' },
+  { id:'q7r8s9', source:'whatsapp', complaint:'Persistent watery diarrhea with dehydration signs, 4 days', district:'Kinshasa', severity:'moderate', age:8, sex:'male', time:'16h ago' },
+  { id:'u1v2w3', source:'telegram', complaint:'Severe headache, neck stiffness, photophobia, fever 39.5C', district:'Lagos', severity:'critical', age:19, sex:'female', time:'20h ago' },
+  { id:'y5z6a7', source:'manual', complaint:'Joint pain with swelling, heat, limited range of motion — right knee', district:'Johannesburg', severity:'moderate', age:55, sex:'male', time:'1d ago' },
+  { id:'c9d0e1', source:'sms', complaint:'Non-healing ulcer on foot, surrounding cellulitis, diabetic patient', district:'Dar es Salaam', severity:'severe', age:71, sex:'female', time:'1.3d ago' },
+  { id:'g3h4i5', source:'telegram', complaint:'High fever with rash, myalgia, severe fatigue — 3 days', district:'Addis Ababa', severity:'moderate', age:25, sex:'male', time:'1.5d ago' },
+  { id:'k7l8m9', source:'whatsapp', complaint:'Dysuria with cloudy urine, foul odor, previous UTI history', district:'Mombasa', severity:'mild', age:38, sex:'female', time:'1.8d ago' },
+  { id:'o1p2q3', source:'ussd', complaint:'Chest congestion, wheezing, green sputum, SOB on exertion', district:'Lusaka', severity:'moderate', age:50, sex:'male', time:'2d ago' },
+  { id:'s5t6u7', source:'telegram', complaint:'Purulent conjunctivitis, eye discharge, crusting on eyelids', district:'Kumasi', severity:'mild', age:4, sex:'female', time:'2.3d ago' }
+];
+
+const DRUG_RESISTANCE = [
+  { drug:'Penicillin', pct:58 }, { drug:'Amoxicillin', pct:54 }, { drug:'Erythromycin', pct:42 },
+  { drug:'Ciprofloxacin', pct:38 }, { drug:'Ceftriaxone', pct:35 }, { drug:'Azithromycin', pct:32 },
+  { drug:'Clindamycin', pct:28 }, { drug:'Gentamicin', pct:25 }, { drug:'Doxycycline', pct:20 },
+  { drug:'Levofloxacin', pct:18 }, { drug:'Vancomycin', pct:12 }, { drug:'Meropenem', pct:10 }
+];
+
+const TREND_DATES = Array.from({length:30}, (_,i) => { const d=new Date(); d.setDate(d.getDate()-29+i); return d.toISOString().slice(0,10); });
+const TREND_SERIES = {
+  'Amoxicillin — Lagos': TREND_DATES.map((_,i) => +(68 + (i-15)*0.6 + Math.sin(i)*2).toFixed(1)),
+  'Ciprofloxacin — Lagos': TREND_DATES.map((_,i) => +(62 + (i-15)*0.5 + Math.cos(i)*1.8).toFixed(1)),
+  'Ceftriaxone — Nairobi': TREND_DATES.map((_,i) => +(48 + (i-15)*0.4 + Math.sin(i+1)*1.5).toFixed(1)),
+  'Penicillin — Accra': TREND_DATES.map((_,i) => +(74 + (i-15)*0.3 + Math.cos(i+2)*2.2).toFixed(1)),
+  'Meropenem — Kinshasa': TREND_DATES.map((_,i) => +(65 + (i-15)*0.7 + Math.sin(i-1)*1.9).toFixed(1)),
+  'Gentamicin — Johannesburg': TREND_DATES.map((_,i) => +(44 + (i-15)*0.4 + Math.cos(i+3)*1.6).toFixed(1))
 };
 
-DEMO['/api/v1/resistance/drugs'] = {
-  drugs: ['Amoxicillin', 'Azithromycin', 'Ceftriaxone', 'Ciprofloxacin', 'Clindamycin', 'Doxycycline', 'Erythromycin', 'Gentamicin', 'Levofloxacin', 'Meropenem', 'Penicillin', 'Vancomycin'],
-};
+const TREND_COLORS = ['#4ADE80','#2DD4BF','#A78BFA','#F59E0B','#EF4444','#F97316'];
 
-// ── API helper with demo fallback ──
-const api = async (path) => {
-  try {
-    const r = await fetch(API + path, { signal: AbortSignal.timeout(2000) });
-    if (!r.ok) throw new Error(`API ${r.status}`);
-    return r.json();
-  } catch {
-    if (DEMO[path]) return DEMO[path];
-    throw new Error(`No API and no demo data for ${path}`);
-  }
-};
-
-// ── Colors ──
+// ── Helpers ──
 function resColor(pct) {
-  if (pct > 50) return '#EF4444';
-  if (pct > 25) return '#F59E0B';
-  if (pct > 10) return '#00D8FF';
-  return '#2DD4BF';
+  if (pct > 60) return '#EF4444';
+  if (pct > 40) return '#F59E0B';
+  if (pct > 25) return '#00F0FF';
+  return '#4ADE80';
 }
 
-function severityColor(sev) {
-  const m = { critical: '#EF4444', high: '#F97316', medium: '#F59E0B', low: '#00D8FF' };
-  return m[sev] || '#F59E0B';
-}
+function timeAgo(t) { return t; }
 
-function sourceBadgeClass(source) {
-  return source || 'manual';
-}
-
-function timeAgo(dateStr) {
-  if (!dateStr) return '';
-  const sec = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (sec < 10) return 'now';
-  if (sec < 60) return sec + 's';
-  const m = Math.floor(sec / 60);
-  if (m < 60) return m + 'm';
-  const h = Math.floor(m / 60);
-  if (h < 24) return h + 'h';
-  const d = Math.floor(h / 24);
-  return d + 'd';
-}
-
-// ── Animate counter ──
-function animateCounter(el, target, suffix = '', duration = 800) {
-  const start = parseInt(el.textContent.replace(/[^0-9.-]/g, '')) || 0;
-  const diff = target - start;
-  const startTime = performance.now();
-
+// ── Counter animation ──
+function animateCounter(el, target, suffix = '') {
+  const duration = 2000;
+  const start = performance.now();
+  const isLarge = target > 10000;
   function tick(now) {
-    const p = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(start + diff * eased) + suffix;
-    if (p < 1) requestAnimationFrame(tick);
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(target * ease);
+    el.textContent = (isLarge ? val.toLocaleString() : val) + suffix;
+    if (t < 1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  MAP — D3.js interactive Africa map
-// ═══════════════════════════════════════════════════════════
+// ── Scroll reveal with IntersectionObserver ──
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      // Trigger counters
+      e.target.querySelectorAll('[data-count]').forEach(el => {
+        animateCounter(el, parseInt(el.dataset.count), el.dataset.suffix || '');
+      });
+      // Trigger drug bars
+      if (e.target.id === 'resistance' || e.target.closest('#resistance')) {
+        document.querySelectorAll('.drug-bar-fill').forEach(bar => {
+          bar.style.width = bar.dataset.width;
+        });
+      }
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
 
+document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+  revealObserver.observe(el);
+});
+
+// Also observe sections for counter triggers
+document.querySelectorAll('.section').forEach(el => revealObserver.observe(el));
+
+// ── Vision word reveal ──
+const visionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const words = e.target.querySelectorAll('.word');
+      words.forEach((w, i) => {
+        setTimeout(() => w.classList.add('visible'), i * 120);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+const visionEl = document.getElementById('vision-text');
+if (visionEl) visionObserver.observe(visionEl);
+
+// ── Section → Orb mode ──
+const orb = document.getElementById('orb');
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const mode = e.target.dataset.orbMode;
+      orb.classList.remove('alert-mode', 'critical-flash');
+      if (mode === 'alert') orb.classList.add('alert-mode');
+    }
+  });
+}, { threshold: 0.3 });
+
+document.querySelectorAll('.section[data-orb-mode]').forEach(el => sectionObserver.observe(el));
+
+// ── Hero particles ──
+(function initParticles() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+
+  function resize() {
+    w = canvas.width = canvas.offsetWidth;
+    h = canvas.height = canvas.offsetHeight;
+  }
+
+  function createParticles() {
+    particles = Array.from({length: 80}, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2 + 0.5, a: Math.random() * 0.3 + 0.1
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(45, 212, 191, ${p.a})`;
+      ctx.fill();
+    });
+    // Draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(45, 212, 191, ${0.06 * (1 - dist/120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  resize(); createParticles(); draw();
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+})();
+
+// ── Aurora mesh parallax ──
+document.addEventListener('mousemove', (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 30;
+  const y = (e.clientY / window.innerHeight - 0.5) * 30;
+  document.querySelectorAll('.aurora-blob').forEach((blob, i) => {
+    const factor = (i + 1) * 0.5;
+    blob.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
+  });
+});
+
+// ── D3 Map ──
 async function initMap() {
-  const container = document.getElementById('globe-body');
+  const container = document.getElementById('map-container');
+  const tooltip = document.getElementById('map-tooltip');
   if (!container) return;
 
-  const width = container.clientWidth || 800;
-  const height = 420;
+  const width = container.offsetWidth;
+  const height = container.offsetHeight || width / 1.3;
 
-  // Tooltip element
-  const tooltip = document.createElement('div');
-  tooltip.className = 'map-tooltip';
-  container.appendChild(tooltip);
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
 
-  // SVG setup
-  const svg = d3.select(container)
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .style('display', 'block');
-
-  // Glow filter def
-  const defs = svg.append('defs');
-  const filter = defs.append('filter').attr('id', 'point-glow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
-  filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
-  filter.append('feMerge').selectAll('feMergeNode').data(['blur', 'SourceGraphic']).join('feMergeNode').attr('in', d => d);
-
-  const g = svg.append('g');
-  const mainGroup = g.append('g');
-
-  // Projection centered on Sub-Saharan Africa
-  const projection = d3.geoMercator()
-    .center([20, 2])
-    .scale(width * 1.15)
-    .translate([width / 2, height * 0.54]);
+  const projection = d3.geoNaturalEarth1()
+    .center([20, 0])
+    .scale(width / 2.2)
+    .translate([width / 2, height / 2]);
 
   const path = d3.geoPath().projection(projection);
 
-  // Graticule
-  mainGroup.append('path')
-    .datum(d3.geoGraticule().step([15, 15]))
-    .attr('d', path)
-    .attr('fill', 'none')
-    .attr('stroke', 'rgba(0, 216, 255, 0.035)')
-    .attr('stroke-width', '0.3');
-
-  // African country names
-  const AFRICA = new Set([
-    'Nigeria', 'Ghana', 'Kenya', 'Tanzania', 'Uganda', 'Ethiopia',
-    'Dem. Rep. Congo', 'Zambia', 'Zimbabwe', 'Malawi', 'South Africa', 'Senegal',
-    'Mali', 'Niger', 'Chad', 'Sudan', 'South Sudan', 'Somalia', 'Mozambique',
-    'Angola', 'Namibia', 'Botswana', "Côte d'Ivoire", 'Burkina Faso', 'Benin',
-    'Togo', 'Sierra Leone', 'Liberia', 'Guinea', 'Cameroon', 'Central African Rep.',
-    'Gabon', 'Congo', 'Rwanda', 'Burundi', 'Eritrea', 'Djibouti', 'Madagascar',
-    'Mauritania', 'The Gambia', 'Guinea-Bissau', 'Eq. Guinea', 'Lesotho', 'eSwatini',
-    'Western Sahara', 'Mauritius', 'Comoros', 'Sao Tome & Principe', 'Cabo Verde',
-    'Seychelles', 'Djibouti', 'Morocco', 'Algeria', 'Tunisia', 'Libya', 'Egypt'
-  ]);
-
-  // Load TopoJSON country boundaries
   try {
-    const world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
-    const countries = topojson.feature(world, world.objects.countries);
+    const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json());
+    const land = topojson.feature(world, world.objects.land);
 
-    const africanFeatures = countries.features.filter(f => AFRICA.has(f.properties.name));
-
-    // Country fills (subtle gradient based on whether we have data)
-    mainGroup.append('g')
-      .selectAll('path')
-      .data(africanFeatures)
-      .join('path')
+    svg.append('path')
+      .datum(land)
       .attr('d', path)
       .attr('fill', '#0B1424')
-      .attr('stroke', 'rgba(0, 216, 255, 0.12)')
-      .attr('stroke-width', '0.6')
-      .attr('stroke-linejoin', 'round');
-
-    // Coastline highlight
-    mainGroup.append('g')
-      .selectAll('path')
-      .data(africanFeatures)
-      .join('path')
-      .attr('d', path)
-      .attr('fill', 'none')
-      .attr('stroke', 'rgba(0, 216, 255, 0.3)')
-      .attr('stroke-width', '0.2');
-  } catch (e) {
-    console.warn('TopoJSON load failed (non-critical):', e);
-    // Draw fallback: simple background
-    mainGroup.append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('fill', '#0B1424');
+      .attr('stroke', '#1a2540')
+      .attr('stroke-width', 0.5);
+  } catch(e) {
+    // Fallback: simple background
+    svg.append('rect').attr('width', width).attr('height', height).attr('fill', '#0B1424');
   }
 
-  // Load district data and plot
-  try {
-    const data = await api('/api/v1/resistance/map');
-    if (!data.features || !data.features.length) {
-      mainGroup.append('text')
-        .attr('x', width / 2).attr('y', height / 2)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#5A6170').attr('font-size', '12px')
-        .text('No surveillance data available');
-      return;
-    }
-
-    const features = data.features.filter(f => f.lat != null && f.lng != null);
-    if (!features.length) return;
-
-    // Build lookup
-    const featMap = {};
-    features.forEach(f => { featMap[f.district] = f; });
-
-    // Arc connections between outbreak-linked districts
-    const arcPairs = [
-      ['Lagos', 'Accra'], ['Nairobi', 'Mombasa'], ['Kampala', 'Nairobi'],
-      ['Johannesburg', 'Lusaka'], ['Kinshasa', 'Lagos'], ['Addis Ababa', 'Nairobi'],
-      ['Accra', 'Kumasi'], ['Dar es Salaam', 'Mombasa'], ['Harare', 'Lusaka'],
-      ['Abuja', 'Lagos'], ['Dakar', 'Accra'], ['Lilongwe', 'Lusaka'],
-      ['Lagos', 'Abuja'], ['Kampala', 'Kinshasa'], ['Nairobi', 'Dar es Salaam'],
-    ];
-
-    const arcsGroup = mainGroup.append('g').attr('class', 'flow-arcs');
-
-    arcPairs
-      .filter(([a, b]) => featMap[a] && featMap[b])
-      .forEach(([a, b]) => {
-        const f1 = featMap[a], f2 = featMap[b];
-        const p1 = projection([f1.lng, f1.lat]);
-        const p2 = projection([f2.lng, f2.lat]);
-        if (!p1 || !p2) return;
-
-        const midX = (p1[0] + p2[0]) / 2;
-        const midY = (p1[1] + p2[1]) / 2;
-        const dx = p2[0] - p1[0];
-        const dy = p2[1] - p1[1];
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const curve = Math.max(8, dist * 0.15);
-
-        const avgPct = ((f1.avg_resistance_pct || 0) + (f2.avg_resistance_pct || 0)) / 2;
-
-        arcsGroup.append('path')
-          .attr('d', `M${p1[0]},${p1[1]} Q${midX},${midY - curve} ${p2[0]},${p2[1]}`)
-          .attr('fill', 'none')
-          .attr('stroke', resColor(avgPct) + '20')
-          .attr('stroke-width', '0.8')
-          .attr('stroke-dasharray', '3,4');
-      });
-
-    // Points group
-    const pointsGroup = mainGroup.append('g').attr('class', 'district-points');
-
-    features.forEach((f, i) => {
-      const p = projection([f.lng, f.lat]);
-      if (!p) return;
-
-      const pct = f.avg_resistance_pct || 0;
-      const r = Math.max(5, Math.min(16, pct / 7));
-      const color = resColor(pct);
-
-      // Glow layer
-      pointsGroup.append('circle')
-        .attr('cx', p[0]).attr('cy', p[1])
-        .attr('r', r * 2.5)
-        .attr('fill', color)
-        .attr('opacity', '0.1')
-        .attr('filter', 'url(#point-glow)');
-
-      // Main circle
-      pointsGroup.append('circle')
-        .attr('cx', p[0]).attr('cy', p[1])
-        .attr('r', r)
-        .attr('fill', color)
-        .attr('opacity', '0.85')
-        .attr('stroke', 'rgba(255,255,255,0.25)')
-        .attr('stroke-width', '1')
-        .style('cursor', 'pointer')
-        .on('mouseenter', (event) => showDistrictTip(event, f))
-        .on('mouseleave', () => hideTip());
-
-      // Center dot
-      pointsGroup.append('circle')
-        .attr('cx', p[0]).attr('cy', p[1])
-        .attr('r', Math.max(2, r * 0.25))
-        .attr('fill', '#fff').attr('opacity', '0.4');
-
-      // Pulse ring for high resistance (>40%)
-      if (pct > 40) {
-        pointsGroup.append('circle')
-          .attr('cx', p[0]).attr('cy', p[1])
-          .attr('r', r)
-          .attr('fill', 'none')
-          .attr('stroke', color)
-          .attr('stroke-width', '1.5')
-          .attr('opacity', '0.4')
-          .attr('class', 'pulse-ring')
-          .style('animation-delay', `${(i % 6) * 0.5}s`);
-      }
-
-      // District label for >50%
-      if (pct > 50) {
-        pointsGroup.append('text')
-          .attr('x', p[0]).attr('y', p[1] - r - 6)
-          .attr('text-anchor', 'middle')
-          .attr('fill', '#EF4444')
-          .attr('font-size', '7')
-          .attr('font-weight', '600')
-          .attr('font-family', "'JetBrains Mono', monospace")
-          .text(f.district);
-      }
-    });
-
-    // Update badge count
-    const badge = document.getElementById('globe-badge');
-    if (badge) badge.textContent = features.length + ' districts';
-
-    // ── Tooltip functions ──
-    function showDistrictTip(event, f) {
-      const drugRows = f.drugs && f.drugs.length
-        ? f.drugs.slice(0, 5).map(d =>
-            `<div class="tip-drug">
-              <span>${d.drug}</span>
-              <span style="color:${resColor(d.resistance_pct)};font-weight:600">${d.resistance_pct}%</span>
-            </div>`
-          ).join('')
-        : '<div style="color:#5A6170;font-size:10px;">No data</div>';
-
-      tooltip.innerHTML = `
-        <div class="tip-header">${escHtml(f.district)}</div>
-        <div class="tip-region">${f.region || ''} · ${f.active_alerts || 0} alerts</div>
-        <div class="tip-divider"></div>
-        <div class="tip-stat">
-          <span style="color:#949BA8;font-size:10px;">Avg Resistance</span>
-          <span style="color:${resColor(f.avg_resistance_pct)};font-size:22px;font-weight:700">${f.avg_resistance_pct}%</span>
-        </div>
-        <div class="tip-divider"></div>
-        <div class="tip-drugs-label">Top Drugs</div>
-        ${drugRows}
-      `;
-      tooltip.style.display = 'block';
-
-      // Position tooltip anchored to the dot's screen position, not the cursor
-      const rect = event.target.getBoundingClientRect();
-      const dotX = rect.left + rect.width / 2;
-      const dotY = rect.top + rect.height / 2;
-
-      const tipWidth = 240;
-      const tipHeight = tooltip.offsetHeight || 200;
-
-      // Place to the right of the dot, centered vertically
-      let left = dotX + 12;
-      let top = dotY - tipHeight / 2;
-
-      // Clamp to viewport
-      if (left + tipWidth > window.innerWidth - 16) left = dotX - tipWidth - 12;
-      if (top < 16) top = 16;
-      if (top + tipHeight > window.innerHeight - 16) top = window.innerHeight - tipHeight - 16;
-
-      tooltip.style.left = left + 'px';
-      tooltip.style.top = top + 'px';
-    }
-
-    function hideTip() {
-      tooltip.style.display = 'none';
-    }
-
-  } catch (e) {
-    console.error('Map data load failed:', e);
-  }
-
-  // Zoom behavior
-  const zoom = d3.zoom()
-    .scaleExtent([1, 8])
-    .on('zoom', (event) => {
-      mainGroup.attr('transform', event.transform);
-    });
-
-  svg.call(zoom);
-
-  // Double-click to reset zoom
-  svg.on('dblclick.zoom', (event) => {
-    svg.transition().duration(600).call(
-      zoom.transform,
-      d3.zoomIdentity
-    );
+  // District points
+  const featMap = {};
+  DISTRICTS.forEach(d => {
+    const coords = DISTRICT_COORDS[d.district];
+    if (!coords) return;
+    const pos = projection(coords);
+    if (!pos) return;
+    featMap[d.district] = { ...d, x: pos[0], y: pos[1] };
   });
 
-  // Initial zoom hint
-  setTimeout(() => {
-    const hint = container.querySelector('.map-zoom-hint');
-    if (hint) hint.style.opacity = '0.4';
-  }, 6000);
-}
+  // Arcs
+  const arcsGroup = svg.append('g');
+  ARC_PAIRS.forEach(([a, b]) => {
+    const f1 = featMap[a], f2 = featMap[b];
+    if (!f1 || !f2) return;
+    const midX = (f1.x + f2.x) / 2;
+    const midY = (f1.y + f2.y) / 2 - 30;
+    arcsGroup.append('path')
+      .attr('d', `M${f1.x},${f1.y} Q${midX},${midY} ${f2.x},${f2.y}`)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(45,212,191,0.08)')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '4,4');
+  });
 
-// ═══════════════════════════════════════════════════════════
-//  STATS → HERO CARDS
-// ═══════════════════════════════════════════════════════════
+  // Points
+  const pointsGroup = svg.append('g');
+  Object.values(featMap).forEach(f => {
+    const g = pointsGroup.append('g')
+      .attr('transform', `translate(${f.x},${f.y})`)
+      .style('cursor', 'pointer');
 
-async function loadStats() {
-  try {
-    const d = await api('/api/v1/stats/dashboard');
+    // Glow
+    g.append('circle')
+      .attr('r', Math.max(6, f.avg_resistance_pct / 5))
+      .attr('fill', resColor(f.avg_resistance_pct))
+      .attr('opacity', 0.15)
+      .attr('filter', 'blur(4px)');
 
-    applyStat('val-cases', d.total_cases, '');
-    applyStat('val-alerts', d.active_alerts, '');
-    applyStat('val-resistance', d.avg_resistance_pct, '%');
-    applyStat('val-districts', d.districts_covered, '');
-    applyStat('val-week', d.cases_this_week, '');
+    // Core
+    g.append('circle')
+      .attr('r', Math.max(3, f.avg_resistance_pct / 8))
+      .attr('fill', resColor(f.avg_resistance_pct))
+      .attr('opacity', 0.8);
 
-    applyChange('change-cases', d.total_cases_change);
-    applyChange('change-alerts', d.active_alerts_change, true);
-    applyChange('change-resistance', d.avg_resistance_change);
-    applyChange('change-districts', null);
-    applyChange('change-week', null);
+    // Label
+    g.append('text')
+      .attr('x', 0)
+      .attr('y', -Math.max(6, f.avg_resistance_pct / 5) - 6)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#949BA8')
+      .attr('font-size', '9px')
+      .attr('font-family', "'Syne', sans-serif")
+      .text(f.district);
 
-    // Footer
-    setText('footer-cases', d.total_cases);
-    setText('footer-alerts', d.active_alerts);
-    setText('footer-districts', d.districts_covered);
-
-  } catch (e) { console.error('Stats load failed:', e); }
-}
-
-function applyStat(id, val, suffix) {
-  const el = $(id);
-  if (!el) return;
-  el.classList.remove('loading');
-  animateCounter(el, val || 0, suffix || '');
-}
-
-function applyChange(id, val, inverseBad = false) {
-  const el = $(id);
-  if (!el) return;
-  if (val == null) { el.classList.add('neutral'); el.textContent = '—'; return; }
-  const isUp = val > 0;
-  const arrow = isUp ? '↑' : '↓';
-  el.className = 'stat-change ' + (isUp ? 'up' : 'down');
-  el.textContent = `${arrow} ${Math.abs(val)}%`;
-}
-
-// ═══════════════════════════════════════════════════════════
-//  ALERTS
-// ═══════════════════════════════════════════════════════════
-
-async function loadAlerts() {
-  try {
-    const d = await api('/api/v1/alerts?per_page=8');
-    setText('alerts-badge', (d.total || 0) + ' active');
-    const body = $('alerts-body');
-
-    if (!d.alerts || !d.alerts.length) {
-      body.innerHTML = '<div class="empty-state">No active alerts</div>';
-      return;
-    }
-
-    body.innerHTML = d.alerts.map(a => {
-      const sc = severityColor(a.severity);
-      return `<div class="alert-item" tabindex="0">
-        <div class="alert-severity-indicator" style="background:${sc};"></div>
-        <div class="alert-content">
-          <div class="alert-title">${escHtml(a.title)}</div>
-          <div class="alert-message">${escHtml(a.message)}</div>
-          <div class="alert-meta">${a.district || ''}${a.drug ? ' · ' + a.drug : ''} · ${timeAgo(a.created_at)}</div>
-        </div>
-      </div>`;
-    }).join('');
-
-  } catch (e) { console.error('Alerts load failed:', e); }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  DRUG RESISTANCE
-// ═══════════════════════════════════════════════════════════
-
-async function loadDrugs() {
-  try {
-    const d = await api('/api/v1/resistance/map');
-    const agg = {};
-    if (d.features) {
-      d.features.forEach(f => {
-        if (f.drugs) f.drugs.forEach(dr => {
-          if (!agg[dr.drug]) agg[dr.drug] = { sum: 0, count: 0 };
-          agg[dr.drug].sum += dr.resistance_pct;
-          agg[dr.drug].count++;
-        });
-      });
-    }
-
-    const entries = Object.entries(agg)
-      .map(([k, v]) => ({ drug: k, avg: +(v.sum / v.count).toFixed(1) }))
-      .sort((a, b) => b.avg - a.avg);
-
-    setText('drugs-badge', entries.length + ' drugs');
-    const body = $('drugs-body');
-
-    if (!entries.length) {
-      body.innerHTML = '<div class="empty-state">No data</div>';
-      return;
-    }
-
-    body.innerHTML = entries.map((e, i) => {
-      const color = resColor(e.avg);
-      return `<div class="drug-item">
-        <span class="drug-label">${e.drug}</span>
-        <div class="drug-bar-track">
-          <div class="drug-bar-fill" style="width:${Math.min(e.avg, 100)}%;background:${color};transition-delay:${i * 40}ms;"></div>
-        </div>
-        <span class="drug-pct" style="color:${color};">${e.avg}%</span>
-      </div>`;
-    }).join('');
-
-  } catch (e) { console.error('Drugs load failed:', e); }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  TRENDS CHART
-// ═══════════════════════════════════════════════════════════
-
-let trendsChart = null;
-
-async function loadTrends(drugFilter = '') {
-  try {
-    const params = drugFilter ? `?drug=${encodeURIComponent(drugFilter)}` : '';
-    const d = await api('/api/v1/resistance/trends' + params);
-
-    if (!d.dates || !d.series) return;
-
-    const datasets = Object.entries(d.series).map(([label, data], i) => {
-      const colors = ['#00D8FF', '#2DD4BF', '#A78BFA', '#F59E0B', '#F97316', '#EF4444'];
-      return {
-        label,
-        data,
-        borderColor: colors[i % colors.length],
-        backgroundColor: colors[i % colors.length] + '08',
-        fill: false,
-        tension: 0.3,
-        pointRadius: 2,
-        pointHoverRadius: 4,
-        borderWidth: 1.5,
-      };
+    // Tooltip
+    g.on('mouseenter', (event) => {
+      const drugRows = f.drugs.slice(0, 4).map(d =>
+        `<div class="drug-row"><span class="drug-name">${d.drug}</span><span class="drug-pct" style="color:${resColor(d.resistance_pct)}">${d.resistance_pct}%</span></div>`
+      ).join('');
+      tooltip.innerHTML = `
+        <h4>${f.district} <span class="muted" style="font-weight:400;font-size:11px">${f.region}</span></h4>
+        <div style="font-family:var(--font-mono);font-size:20px;color:${resColor(f.avg_resistance_pct)};margin:8px 0">${f.avg_resistance_pct}%</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">avg resistance</div>
+        ${drugRows}
+      `;
+      tooltip.classList.add('active');
+      const rect = container.getBoundingClientRect();
+      tooltip.style.left = (f.x + 20) + 'px';
+      tooltip.style.top = (f.y - 20) + 'px';
     });
 
-    const ctx = document.getElementById('trends-chart').getContext('2d');
+    g.on('mouseleave', () => tooltip.classList.remove('active'));
+  });
+}
 
-    if (trendsChart) {
-      trendsChart.data.labels = d.dates;
-      trendsChart.data.datasets = datasets;
-      trendsChart.update('none');
-      return;
-    }
+// ── Render Alerts ──
+function renderAlerts() {
+  const grid = document.getElementById('alerts-grid');
+  if (!grid) return;
+  grid.innerHTML = ALERTS.map((a, i) => `
+    <div class="alert-card glass ${a.severity} reveal ${i % 2 === 0 ? 'reveal-left' : 'reveal-right'} delay-${Math.min(i % 3 + 1, 6)}">
+      <div class="alert-header">
+        <div class="alert-dot"></div>
+        <div class="alert-title">${a.title}</div>
+      </div>
+      <div class="alert-message">${a.message}</div>
+      <div class="alert-meta">
+        <span class="alert-tag">${a.district}</span>
+        <span class="alert-tag">${a.drug}</span>
+        <span class="alert-time">${a.time}</span>
+      </div>
+    </div>
+  `).join('');
+  // Re-observe new elements
+  grid.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => revealObserver.observe(el));
+}
 
-    trendsChart = new Chart(ctx, {
-      type: 'line',
-      data: { labels: d.dates, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 600, easing: 'easeOutQuart' },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              color: '#949BA8',
-              font: { family: "'Plus Jakarta Sans', sans-serif", size: 9 },
-              boxWidth: 10,
-              boxHeight: 2,
-              padding: 10,
-            },
-          },
-          tooltip: {
-            backgroundColor: 'rgba(8,13,26,0.92)',
-            titleColor: '#EEF0F4',
-            bodyColor: '#949BA8',
-            borderColor: 'rgba(0,216,255,0.1)',
-            borderWidth: 1,
-            padding: 10,
-            cornerRadius: 8,
-            titleFont: { family: "'Outfit', sans-serif", size: 11 },
-            bodyFont: { family: "'JetBrains Mono', monospace", size: 10 },
-          },
+// ── Render Cases ──
+function renderCases() {
+  const body = document.getElementById('cases-body');
+  if (!body) return;
+  body.innerHTML = CASES.map(c => `
+    <tr>
+      <td><span class="case-id">${c.id}</span></td>
+      <td><span class="source-badge ${c.source}">${c.source}</span></td>
+      <td><span class="complaint-text">${c.complaint}</span></td>
+      <td class="hide-mobile"><span class="district-tag">${c.district}</span></td>
+      <td class="hide-mobile">
+        <span class="severity-badge">
+          <span class="severity-dot ${c.severity}"></span>
+          ${c.severity}
+        </span>
+      </td>
+      <td class="hide-mobile" style="font-size:11px;color:var(--text-dim)">${c.age}y ${c.sex === 'male' ? 'M' : 'F'}</td>
+      <td><span class="time-ago">${c.time}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── Render Resistance Bars ──
+function renderResistanceBars() {
+  const container = document.getElementById('resistance-bars');
+  if (!container) return;
+  container.innerHTML = DRUG_RESISTANCE.map(d => `
+    <div class="drug-bar-row">
+      <span class="drug-name">${d.drug}</span>
+      <div class="drug-bar-track">
+        <div class="drug-bar-fill" data-width="${d.pct}%" style="background: ${resColor(d.pct)};"></div>
+      </div>
+      <span class="drug-pct" style="color: ${resColor(d.pct)}">${d.pct}%</span>
+    </div>
+  `).join('');
+}
+
+// ── Trend Chart (Chart.js) ──
+function initTrendChart() {
+  const canvas = document.getElementById('trend-chart');
+  if (!canvas) return;
+
+  const labels = TREND_DATES.map(d => d.slice(5)); // MM-DD
+  const datasets = Object.entries(TREND_SERIES).map(([label, data], i) => ({
+    label,
+    data,
+    borderColor: TREND_COLORS[i],
+    backgroundColor: TREND_COLORS[i] + '15',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    tension: 0.4,
+    fill: false
+  }));
+
+  new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, boxWidth: 12, padding: 12 }
         },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#5A6170',
-              font: { size: 9 },
-              maxTicksLimit: 8,
-            },
-          },
-          y: {
-            min: 0,
-            max: 100,
-            grid: {
-              color: 'rgba(255,255,255,0.02)',
-            },
-            ticks: {
-              color: '#5A6170',
-              font: { size: 9 },
-              callback: v => v + '%',
-            },
-          },
-        },
+        tooltip: {
+          backgroundColor: 'rgba(6,9,15,0.92)',
+          borderColor: 'rgba(255,255,255,0.06)',
+          borderWidth: 1,
+          titleFont: { family: "'Syne'", size: 11 },
+          bodyFont: { family: "'JetBrains Mono'", size: 10 },
+          titleColor: '#EEF0F4',
+          bodyColor: '#949BA8',
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%` }
+        }
       },
-    });
-
-  } catch (e) { console.error('Trends load failed:', e); }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  CASES TABLE
-// ═══════════════════════════════════════════════════════════
-
-async function loadCases() {
-  try {
-    const d = await api('/api/v1/cases?per_page=12');
-    setText('cases-badge', (d.total || 0) + ' total');
-    const body = $('cases-body');
-
-    if (!d.cases || !d.cases.length) {
-      body.innerHTML = '<tr><td colspan="7" class="empty-state">No cases reported</td></tr>';
-      return;
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.03)' },
+          ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, maxTicksLimit: 8 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.03)' },
+          ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, callback: v => v + '%' },
+          min: 0, max: 100
+        }
+      }
     }
-
-    body.innerHTML = d.cases.map(c => {
-      const id = (c.case_id || '').slice(0, 6) || '—';
-      const src = c.source || 'manual';
-      const ageStr = c.patient_age_years ? c.patient_age_years + 'y' : '—';
-      const sexStr = c.patient_sex && c.patient_sex !== 'unknown' ? c.patient_sex.charAt(0).toUpperCase() : '—';
-      const sevColor = severityColor(c.severity);
-      const complaint = (c.complaint || '').slice(0, 55) + ((c.complaint || '').length > 55 ? '…' : '');
-
-      return `<tr>
-        <td><span class="case-id">${id}</span></td>
-        <td><span class="source-badge ${sourceBadgeClass(src)}">${src}</span></td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${complaint || '—'}</td>
-        <td class="hide-mobile"><span class="district-tag">${c.district || '—'}</span></td>
-        <td class="hide-mobile">
-          <span class="severity-badge">
-            <span class="severity-dot" style="background:${sevColor}"></span>
-            ${c.severity || 'unknown'}
-          </span>
-        </td>
-        <td class="hide-mobile" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">${ageStr} / ${sexStr}</td>
-        <td><span class="time-ago">${timeAgo(c.created_at)}</span></td>
-      </tr>`;
-    }).join('');
-
-  } catch (e) { console.error('Cases load failed:', e); }
+  });
 }
 
-// ═══════════════════════════════════════════════════════════
-//  DRUG DROPDOWN
-// ═══════════════════════════════════════════════════════════
-
-async function loadDrugDropdown() {
-  try {
-    const d = await api('/api/v1/resistance/drugs');
-    const select = $('trend-drug-select');
-    if (!d.drugs) return;
-    d.drugs.forEach(drug => {
-      const opt = document.createElement('option');
-      opt.value = drug;
-      opt.textContent = drug;
-      select.appendChild(opt);
-    });
-
-    select.addEventListener('change', () => {
-      loadTrends(select.value);
-    });
-
-  } catch (e) { console.error('Drug dropdown failed:', e); }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  UTILITY
-// ═══════════════════════════════════════════════════════════
-
-function setText(id, val) {
-  const el = $(id);
-  if (el) el.textContent = val;
-}
-
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
-}
-
-// ═══════════════════════════════════════════════════════════
-//  CLOCK
-// ═══════════════════════════════════════════════════════════
-
-function updateClock() {
-  const now = new Date();
-  const utc = now.toUTCString().split(' ')[4];
-  $('header-time').textContent = utc + ' UTC';
-}
-
-// ═══════════════════════════════════════════════════════════
-//  FULL REFRESH
-// ═══════════════════════════════════════════════════════════
-
-async function fullRefresh() {
-  try {
-    await Promise.all([
-      loadStats(),
-      loadAlerts(),
-      loadDrugs(),
-      loadCases(),
-    ]);
-    $('footer-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch (e) {
-    console.error('Refresh failed:', e);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════
-
+// ── Init everything ──
 document.addEventListener('DOMContentLoaded', () => {
-  updateClock();
-  setInterval(updateClock, 1000);
-
-  fullRefresh();
+  renderAlerts();
+  renderCases();
+  renderResistanceBars();
   initMap();
-  loadTrends();
-  loadDrugDropdown();
-
-  // Auto-refresh every 25 seconds
-  setInterval(() => {
-    fullRefresh();
-    loadTrends($('trend-drug-select').value);
-  }, 25000);
+  initTrendChart();
 });
 </script>
 </body>
