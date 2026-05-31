@@ -1117,6 +1117,174 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
   .case-row-new, .alert-card-new, .alert-banner { animation: none; }
   .parallax-tilt { transition: none; }
   #live-badge { opacity: 1; transform: none; }
+  .cmd-overlay, .cmd-palette { transition: none; }
+}
+
+/* ═══ Command Palette ═══ */
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+  background: rgba(6,9,15,0.6);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.cmd-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.cmd-palette {
+  width: 90%;
+  max-width: 640px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.95) translateY(-10px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 40px rgba(45,212,191,0.05);
+}
+
+.cmd-overlay.open .cmd-palette {
+  transform: scale(1) translateY(0);
+}
+
+.cmd-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.cmd-search-icon { color: var(--text-muted); flex-shrink: 0; }
+
+.cmd-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  caret-color: var(--aurora-2);
+}
+
+.cmd-input::placeholder { color: var(--text-muted); }
+
+.cmd-kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted);
+}
+
+.cmd-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-results::-webkit-scrollbar { width: 4px; }
+.cmd-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.cmd-group-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 12px 4px;
+}
+
+.cmd-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cmd-result:hover, .cmd-result.active {
+  background: rgba(255,255,255,0.06);
+}
+
+.cmd-result.active {
+  box-shadow: inset 0 0 0 1px rgba(45,212,191,0.2);
+}
+
+.cmd-result-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+}
+
+.cmd-result-icon.district { background: rgba(45,212,191,0.1); }
+.cmd-result-icon.drug { background: rgba(167,139,250,0.1); }
+.cmd-result-icon.alert { background: rgba(239,68,68,0.1); }
+.cmd-result-icon.action { background: rgba(245,158,11,0.1); }
+
+.cmd-result-text { flex: 1; min-width: 0; }
+
+.cmd-result-primary {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmd-result-secondary {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.cmd-highlight {
+  background: rgba(45,212,191,0.2);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.cmd-footer {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-glass);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cmd-footer kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  margin-right: 4px;
 }
 </style>
 </head>
@@ -1139,6 +1307,23 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height
 <div id="orb" aria-label="STAI Assistant Orb" role="img">
   <div class="orb-inner"></div>
   <span class="orb-label">STAI</span>
+</div>
+
+<!-- Command Palette -->
+<div id="cmd-overlay" class="cmd-overlay" aria-hidden="true">
+  <div class="cmd-palette glass" role="dialog" aria-label="Command palette">
+    <div class="cmd-input-wrap">
+      <svg class="cmd-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="cmd-input" class="cmd-input" placeholder="Search districts, drugs, alerts..." autocomplete="off" spellcheck="false">
+      <kbd class="cmd-kbd">ESC</kbd>
+    </div>
+    <div id="cmd-results" class="cmd-results"></div>
+    <div class="cmd-footer">
+      <span><kbd>&uarr;&darr;</kbd> navigate</span>
+      <span><kbd>&crarr;</kbd> select</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
 </div>
 
 <!-- Orb Quick Insights Panel -->
@@ -2126,6 +2311,155 @@ function initParallaxTilt() {
     });
   });
 }
+
+/* ═══ Command Palette ═══ */
+class CommandPalette {
+  constructor() {
+    this.overlay = document.getElementById('cmd-overlay');
+    this.input = document.getElementById('cmd-input');
+    this.results = document.getElementById('cmd-results');
+    this.items = [];
+    this.filtered = [];
+    this.activeIndex = 0;
+    this.isOpen = false;
+    this.init();
+  }
+
+  init() {
+    this.items = [
+      ...DISTRICTS.map(d => ({
+        type: 'district', icon: '📍', iconClass: 'district',
+        primary: d.district, secondary: `${d.avg_resistance_pct}% avg resistance · ${d.top_drug}`,
+        searchText: `${d.district} ${d.region} ${d.top_drug}`.toLowerCase(),
+        action: () => this.scrollToSection('sec-map')
+      })),
+      ...DRUG_RESISTANCE.map(d => ({
+        type: 'drug', icon: '💊', iconClass: 'drug',
+        primary: d.drug, secondary: `${d.pct}% resistance`,
+        searchText: d.drug.toLowerCase(),
+        action: () => this.scrollToSection('sec-resistance')
+      })),
+      ...ALERTS.slice(0, 8).map(a => ({
+        type: 'alert', icon: '⚠️', iconClass: 'alert',
+        primary: a.title, secondary: `${a.severity} · ${a.district}`,
+        searchText: `${a.title} ${a.severity} ${a.district} ${a.drug}`.toLowerCase(),
+        action: () => this.scrollToSection('sec-alerts')
+      })),
+      { type: 'action', icon: '⬆️', iconClass: 'action', primary: 'Scroll to top', secondary: 'Go to hero section', searchText: 'scroll top hero home', action: () => document.getElementById('sec-hero')?.scrollIntoView({ behavior: 'smooth' }) },
+      { type: 'action', icon: '📊', iconClass: 'action', primary: 'View all cases', secondary: 'Jump to cases section', searchText: 'cases field reports table', action: () => this.scrollToSection('sec-cases') },
+      { type: 'action', icon: '🗺️', iconClass: 'action', primary: 'View resistance map', secondary: 'Africa surveillance map', searchText: 'map africa surveillance', action: () => this.scrollToSection('sec-map') },
+      { type: 'action', icon: '📡', iconClass: 'action', primary: 'Toggle live data', secondary: 'Start/stop real-time feed', searchText: 'live data toggle realtime', action: () => { if (liveEngine.running) liveEngine.stop(); else liveEngine.start(); } },
+      { type: 'action', icon: '📈', iconClass: 'action', primary: 'View resistance trends', secondary: 'Drug resistance over time', searchText: 'trends resistance chart', action: () => this.scrollToSection('sec-resistance') },
+    ];
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); this.toggle(); }
+      if (e.key === 'Escape' && this.isOpen) this.close();
+    });
+
+    this.overlay.addEventListener('click', (e) => { if (e.target === this.overlay) this.close(); });
+    this.input.addEventListener('input', () => this.search());
+    this.input.addEventListener('keydown', (e) => this.handleKeyNav(e));
+  }
+
+  toggle() { this.isOpen ? this.close() : this.open(); }
+
+  open() {
+    this.isOpen = true;
+    this.overlay.classList.add('open');
+    this.overlay.setAttribute('aria-hidden', 'false');
+    this.input.value = '';
+    this.activeIndex = 0;
+    this.search();
+    requestAnimationFrame(() => this.input.focus());
+  }
+
+  close() {
+    this.isOpen = false;
+    this.overlay.classList.remove('open');
+    this.overlay.setAttribute('aria-hidden', 'true');
+    this.input.value = '';
+    this.results.innerHTML = '';
+  }
+
+  search() {
+    const query = this.input.value.toLowerCase().trim();
+    this.filtered = query ? this.items.filter(item => item.searchText.includes(query)) : this.items;
+    this.activeIndex = 0;
+    this.render();
+  }
+
+  render() {
+    if (this.filtered.length === 0) {
+      this.results.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">No results found</div>';
+      return;
+    }
+
+    const groups = {};
+    this.filtered.forEach(item => {
+      if (!groups[item.type]) groups[item.type] = [];
+      groups[item.type].push(item);
+    });
+
+    const groupLabels = { district: 'Districts', drug: 'Drugs', alert: 'Alerts', action: 'Actions' };
+    let globalIndex = 0;
+
+    this.results.innerHTML = Object.entries(groups).map(([type, items]) => `
+      <div class="cmd-group-label">${groupLabels[type] || type}</div>
+      ${items.map(item => {
+        const idx = globalIndex++;
+        return `
+          <div class="cmd-result ${idx === this.activeIndex ? 'active' : ''}" data-index="${idx}" onclick="cmdPalette.select(${idx})">
+            <div class="cmd-result-icon ${item.iconClass}">${item.icon}</div>
+            <div class="cmd-result-text">
+              <div class="cmd-result-primary">${this.highlight(item.primary, this.input.value)}</div>
+              <div class="cmd-result-secondary">${item.secondary}</div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `).join('');
+  }
+
+  highlight(text, query) {
+    if (!query) return text;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="cmd-highlight">$1</span>');
+  }
+
+  handleKeyNav(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.activeIndex = Math.min(this.activeIndex + 1, this.filtered.length - 1);
+      this.render();
+      this.scrollActiveIntoView();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.activeIndex = Math.max(this.activeIndex - 1, 0);
+      this.render();
+      this.scrollActiveIntoView();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      this.select(this.activeIndex);
+    }
+  }
+
+  scrollActiveIntoView() {
+    const active = this.results.querySelector('.cmd-result.active');
+    if (active) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  select(index) {
+    const item = this.filtered[index];
+    if (item?.action) { this.close(); item.action(); }
+  }
+
+  scrollToSection(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+const cmdPalette = new CommandPalette();
 
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
