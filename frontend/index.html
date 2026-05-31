@@ -913,11 +913,88 @@ const API = window.location.origin;
 const $ = id => document.getElementById(id);
 const $$ = q => document.querySelectorAll(q);
 
-// ── API helper ──
+// ── Demo data for static hosting (GitHub Pages) ──
+const DEMO = {
+  '/api/v1/stats/dashboard': {
+    total_cases: 250, total_cases_change: 12.5, active_alerts: 10,
+    active_alerts_change: -8.3, avg_resistance_pct: 38.4, avg_resistance_change: 3.2,
+    active_chws: 45, active_chws_change: 5.0, cases_this_week: 47, districts_covered: 15, period: '7d',
+  },
+  '/api/v1/alerts?per_page=8': {
+    total: 10, alerts: [
+      { severity: 'critical', title: 'Ciprofloxacin-Resistant E. coli Outbreak', message: 'Lagos Island: 67% of E. coli isolates resistant to ciprofloxacin. Cluster linked to contaminated water source.', district: 'Lagos', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 3600000 * 4).toISOString() },
+      { severity: 'critical', title: 'Carbapenem Resistance Emerging', message: 'Cliniques Universitaires: K. pneumoniae resistant to meropenem. Last-resort antibiotics compromised.', district: 'Kinshasa', drug: 'Meropenem', created_at: new Date(Date.now() - 3600000 * 8).toISOString() },
+      { severity: 'critical', title: 'MRSA-like Penicillin Resistance in Accra', message: 'Korle Bu: 78% S. aureus resistant to penicillin. Wound infection cluster in surgical ward.', district: 'Accra', drug: 'Penicillin', created_at: new Date(Date.now() - 3600000 * 12).toISOString() },
+      { severity: 'high', title: 'ESBL-Producing K. pneumoniae Cluster', message: 'Kenyatta National Hospital: 5 MDR K. pneumoniae cases in ICU. Resistance to 3rd-gen cephalosporins confirmed.', district: 'Nairobi', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 3600000 * 18).toISOString() },
+      { severity: 'high', title: 'Azithromycin-Resistant Gonorrhea Surge', message: 'Mulago region: 44% of N. gonorrhoeae isolates resistant. STI surveillance clinic reporting treatment failures.', district: 'Kampala', drug: 'Azithromycin', created_at: new Date(Date.now() - 3600000 * 24).toISOString() },
+      { severity: 'high', title: 'MDR Pseudomonas in ICU', message: 'Chris Hani Baragwanath ICU: Multi-drug resistant P. aeruginosa. Limited treatment options remain.', district: 'Johannesburg', drug: 'Gentamicin', created_at: new Date(Date.now() - 3600000 * 36).toISOString() },
+      { severity: 'medium', title: 'ESBL E. coli in Coastal Kenya', message: 'Coastal General: ESBL-producing E. coli in pediatric UTI cases. Linked to poultry antibiotic use.', district: 'Mombasa', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 3600000 * 48).toISOString() },
+      { severity: 'medium', title: 'Ciprofloxacin-Resistant Typhoid', message: 'Black Lion Hospital: Ciprofloxacin resistance in S. typhi rising. Azithromycin alternative showing efficacy.', district: 'Addis Ababa', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 3600000 * 72).toISOString() },
+    ],
+  },
+  '/api/v1/resistance/map': {
+    features: [
+      { district: 'Lagos', region: 'West Africa', lat: 6.5244, lng: 3.3792, avg_resistance_pct: 52.3, top_drug: 'Amoxicillin', top_resistance: 72, drugs_count: 12, active_alerts: 2, drugs: [{ drug: 'Amoxicillin', resistance_pct: 72 }, { drug: 'Penicillin', resistance_pct: 65 }, { drug: 'Ciprofloxacin', resistance_pct: 67 }, { drug: 'Erythromycin', resistance_pct: 48 }] },
+      { district: 'Accra', region: 'West Africa', lat: 5.6037, lng: -0.187, avg_resistance_pct: 45.1, top_drug: 'Penicillin', top_resistance: 78, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Penicillin', resistance_pct: 78 }, { drug: 'Amoxicillin', resistance_pct: 62 }, { drug: 'Erythromycin', resistance_pct: 41 }] },
+      { district: 'Nairobi', region: 'East Africa', lat: -1.2921, lng: 36.8219, avg_resistance_pct: 38.7, top_drug: 'Ceftriaxone', top_resistance: 52, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', resistance_pct: 52 }, { drug: 'Ciprofloxacin', resistance_pct: 35 }, { drug: 'Gentamicin', resistance_pct: 28 }] },
+      { district: 'Kampala', region: 'East Africa', lat: 0.3476, lng: 32.5825, avg_resistance_pct: 34.2, top_drug: 'Azithromycin', top_resistance: 44, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Azithromycin', resistance_pct: 44 }, { drug: 'Penicillin', resistance_pct: 38 }, { drug: 'Doxycycline', resistance_pct: 22 }] },
+      { district: 'Kinshasa', region: 'Central Africa', lat: -4.4419, lng: 15.2663, avg_resistance_pct: 41.8, top_drug: 'Meropenem', top_resistance: 72, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Meropenem', resistance_pct: 72 }, { drug: 'Ceftriaxone', resistance_pct: 45 }, { drug: 'Gentamicin', resistance_pct: 38 }] },
+      { district: 'Johannesburg', region: 'Southern Africa', lat: -26.2041, lng: 28.0473, avg_resistance_pct: 36.5, top_drug: 'Gentamicin', top_resistance: 48, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Gentamicin', resistance_pct: 48 }, { drug: 'Ciprofloxacin', resistance_pct: 32 }, { drug: 'Ceftriaxone', resistance_pct: 25 }] },
+      { district: 'Dar es Salaam', region: 'East Africa', lat: -6.7924, lng: 39.2083, avg_resistance_pct: 29.4, top_drug: 'Amoxicillin', top_resistance: 55, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', resistance_pct: 55 }, { drug: 'Penicillin', resistance_pct: 42 }, { drug: 'Erythromycin', resistance_pct: 28 }] },
+      { district: 'Addis Ababa', region: 'East Africa', lat: 9.032, lng: 38.7469, avg_resistance_pct: 31.6, top_drug: 'Ciprofloxacin', top_resistance: 38, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Ciprofloxacin', resistance_pct: 38 }, { drug: 'Amoxicillin', resistance_pct: 45 }, { drug: 'Penicillin', resistance_pct: 30 }] },
+      { district: 'Mombasa', region: 'East Africa', lat: -4.0435, lng: 39.6682, avg_resistance_pct: 33.1, top_drug: 'Ceftriaxone', top_resistance: 41, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', resistance_pct: 41 }, { drug: 'Amoxicillin', resistance_pct: 48 }, { drug: 'Doxycycline', resistance_pct: 18 }] },
+      { district: 'Lusaka', region: 'Southern Africa', lat: -15.3875, lng: 28.3228, avg_resistance_pct: 27.8, top_drug: 'Penicillin', top_resistance: 45, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Penicillin', resistance_pct: 45 }, { drug: 'Erythromycin', resistance_pct: 32 }, { drug: 'Amoxicillin', resistance_pct: 38 }] },
+      { district: 'Harare', region: 'Southern Africa', lat: -17.8252, lng: 31.0335, avg_resistance_pct: 25.3, top_drug: 'Erythromycin', top_resistance: 40, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Erythromycin', resistance_pct: 40 }, { drug: 'Penicillin', resistance_pct: 35 }, { drug: 'Amoxicillin', resistance_pct: 30 }] },
+      { district: 'Lilongwe', region: 'Southern Africa', lat: -13.9626, lng: 33.7741, avg_resistance_pct: 30.2, top_drug: 'Penicillin', top_resistance: 35, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Penicillin', resistance_pct: 35 }, { drug: 'Amoxicillin', resistance_pct: 42 }, { drug: 'Ciprofloxacin', resistance_pct: 20 }] },
+      { district: 'Kumasi', region: 'West Africa', lat: 6.6885, lng: -1.6244, avg_resistance_pct: 39.7, top_drug: 'Amoxicillin', top_resistance: 60, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', resistance_pct: 60 }, { drug: 'Penicillin', resistance_pct: 52 }, { drug: 'Ciprofloxacin', resistance_pct: 28 }] },
+      { district: 'Abuja', region: 'West Africa', lat: 9.0765, lng: 7.3986, avg_resistance_pct: 35.4, top_drug: 'Clindamycin', top_resistance: 33, drugs_count: 12, active_alerts: 1, drugs: [{ drug: 'Clindamycin', resistance_pct: 33 }, { drug: 'Amoxicillin', resistance_pct: 50 }, { drug: 'Penicillin', resistance_pct: 42 }] },
+      { district: 'Dakar', region: 'West Africa', lat: 14.7167, lng: -17.4677, avg_resistance_pct: 28.9, top_drug: 'Amoxicillin', top_resistance: 48, drugs_count: 12, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', resistance_pct: 48 }, { drug: 'Penicillin', resistance_pct: 40 }, { drug: 'Ciprofloxacin', resistance_pct: 18 }] },
+    ],
+  },
+};
+
+// Build trends demo
+(function() {
+  const dates = [];
+  for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); dates.push(d.toISOString().slice(0,10)); }
+  const base = { 'Amoxicillin - Lagos': 68, 'Ciprofloxacin - Lagos': 62, 'Ceftriaxone - Nairobi': 48, 'Penicillin - Accra': 74, 'Meropenem - Kinshasa': 65, 'Gentamicin - Johannesburg': 44 };
+  const series = {};
+  Object.entries(base).forEach(([k, v]) => { series[k] = dates.map((_, i) => +(v + (i - 15) * 0.6 + Math.sin(i) * 2).toFixed(1)); });
+  DEMO['/api/v1/resistance/trends'] = { dates, series };
+  DEMO['/api/v1/resistance/trends?'] = { dates, series };
+})();
+
+DEMO['/api/v1/cases?per_page=12'] = {
+  total: 250, cases: [
+    { case_id: 'a1b2c3d4', source: 'telegram', complaint: 'Fever with chills for 5 days, no response to amoxicillin', district: 'Lagos', severity: 'severe', patient_age_years: 34, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 2).toISOString() },
+    { case_id: 'e5f6g7h8', source: 'whatsapp', complaint: 'Productive cough with yellow sputum, chest pain on deep breathing', district: 'Nairobi', severity: 'moderate', patient_age_years: 28, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 5).toISOString() },
+    { case_id: 'i9j0k1l2', source: 'telegram', complaint: 'Burning urination, frequency, suprapubic pain for 3 days', district: 'Accra', severity: 'mild', patient_age_years: 45, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 8).toISOString() },
+    { case_id: 'm3n4o5p6', source: 'ussd', complaint: 'Infected surgical wound with purulent discharge, erythema spreading', district: 'Kampala', severity: 'critical', patient_age_years: 62, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 12).toISOString() },
+    { case_id: 'q7r8s9t0', source: 'whatsapp', complaint: 'Persistent watery diarrhea with dehydration signs, 4 days', district: 'Kinshasa', severity: 'moderate', patient_age_years: 8, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 16).toISOString() },
+    { case_id: 'u1v2w3x4', source: 'telegram', complaint: 'Severe headache, neck stiffness, photophobia, fever 39.5C', district: 'Lagos', severity: 'critical', patient_age_years: 19, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 20).toISOString() },
+    { case_id: 'y5z6a7b8', source: 'manual', complaint: 'Joint pain with swelling, heat, limited range of motion — right knee', district: 'Johannesburg', severity: 'moderate', patient_age_years: 55, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 24).toISOString() },
+    { case_id: 'c9d0e1f2', source: 'sms', complaint: 'Non-healing ulcer on foot, surrounding cellulitis, diabetic patient', district: 'Dar es Salaam', severity: 'severe', patient_age_years: 71, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 30).toISOString() },
+    { case_id: 'g3h4i5j6', source: 'telegram', complaint: 'High fever with rash, myalgia, severe fatigue — 3 days', district: 'Addis Ababa', severity: 'moderate', patient_age_years: 25, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 36).toISOString() },
+    { case_id: 'k7l8m9n0', source: 'whatsapp', complaint: 'Dysuria with cloudy urine, foul odor, previous UTI history', district: 'Mombasa', severity: 'mild', patient_age_years: 38, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 42).toISOString() },
+    { case_id: 'o1p2q3r4', source: 'ussd', complaint: 'Chest congestion, wheezing, green sputum, SOB on exertion', district: 'Lusaka', severity: 'moderate', patient_age_years: 50, patient_sex: 'male', created_at: new Date(Date.now() - 3600000 * 48).toISOString() },
+    { case_id: 's5t6u7v8', source: 'telegram', complaint: 'Purulent conjunctivitis, eye discharge, crusting on eyelids', district: 'Kumasi', severity: 'mild', patient_age_years: 4, patient_sex: 'female', created_at: new Date(Date.now() - 3600000 * 55).toISOString() },
+  ],
+};
+
+DEMO['/api/v1/resistance/drugs'] = {
+  drugs: ['Amoxicillin', 'Azithromycin', 'Ceftriaxone', 'Ciprofloxacin', 'Clindamycin', 'Doxycycline', 'Erythromycin', 'Gentamicin', 'Levofloxacin', 'Meropenem', 'Penicillin', 'Vancomycin'],
+};
+
+// ── API helper with demo fallback ──
 const api = async (path) => {
-  const r = await fetch(API + path);
-  if (!r.ok) throw new Error(`API ${r.status}: ${path}`);
-  return r.json();
+  try {
+    const r = await fetch(API + path, { signal: AbortSignal.timeout(2000) });
+    if (!r.ok) throw new Error(`API ${r.status}`);
+    return r.json();
+  } catch {
+    if (DEMO[path]) return DEMO[path];
+    throw new Error(`No API and no demo data for ${path}`);
+  }
 };
 
 // ── Colors ──
