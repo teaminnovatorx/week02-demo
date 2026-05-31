@@ -1756,7 +1756,7 @@ function renderAlerts() {
   $('alerts-content').innerHTML = `
     <h2 class="alerts-title reveal">Active Threats</h2>
     <p class="alerts-subtitle reveal">${DEMO.alerts.length} alerts across ${DEMO.stats.districts_covered} districts</p>
-    <div class="alerts-grid">
+    <div class="alerts-grid" id="alerts-grid">
       ${DEMO.alerts.map((a, i) => `
         <div class="glass alert-card ${a.severity} reveal reveal-stagger" style="--delay:${i * 100}ms">
           <div class="alert-header">
@@ -1786,7 +1786,7 @@ function renderCases() {
           <th>ID</th><th>Source</th><th>Complaint</th>
           <th>District</th><th>Severity</th><th>Patient</th><th>Time</th>
         </tr></thead>
-        <tbody>
+        <tbody id="cases-body">
           ${DEMO.cases.map((c, i) => `
             <tr style="opacity:0; animation: caseReveal 0.5s var(--spring) ${i * 50}ms forwards;">
               <td><span class="case-id">${c.case_id.slice(0, 8)}</span></td>
@@ -2327,19 +2327,19 @@ class CommandPalette {
 
   init() {
     this.items = [
-      ...DISTRICTS.map(d => ({
+      ...DEMO.map.map(d => ({
         type: 'district', icon: '📍', iconClass: 'district',
         primary: d.district, secondary: `${d.avg_resistance_pct}% avg resistance · ${d.top_drug}`,
         searchText: `${d.district} ${d.region} ${d.top_drug}`.toLowerCase(),
         action: () => this.scrollToSection('sec-map')
       })),
-      ...DRUG_RESISTANCE.map(d => ({
+      ...DEMO.drugs.map(d => ({
         type: 'drug', icon: '💊', iconClass: 'drug',
         primary: d.drug, secondary: `${d.pct}% resistance`,
         searchText: d.drug.toLowerCase(),
         action: () => this.scrollToSection('sec-resistance')
       })),
-      ...ALERTS.slice(0, 8).map(a => ({
+      ...DEMO.alerts.slice(0, 8).map(a => ({
         type: 'alert', icon: '⚠️', iconClass: 'alert',
         primary: a.title, secondary: `${a.severity} · ${a.district}`,
         searchText: `${a.title} ${a.severity} ${a.district} ${a.drug}`.toLowerCase(),
