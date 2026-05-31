@@ -1,0 +1,1991 @@
+# STAI Cinematic Frontend — Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Build a cinematic scrollytelling frontend for STAI (Sentri Intelligence) — an AMR surveillance dashboard that doubles as a launch experience, deployed to GitHub Pages at stai.is-a.software.
+
+**Architecture:** Single `frontend/index.html` file with embedded CSS and JS. No build step, no frameworks. Uses D3.js for the Africa map, Chart.js for trends, and vanilla JS for scroll animations, spring physics, and the Living Orb companion. Demo data is embedded for static hosting with API fallback.
+
+**Tech Stack:** HTML5, CSS3 (custom properties, animations, glassmorphism), vanilla JavaScript, D3.js v7, Chart.js v4, TopoJSON v3, Google Fonts (Syne, Satoshi, JetBrains Mono)
+
+---
+
+## File Structure
+
+All work targets a single file: `frontend/index.html`
+
+The file is organized in this order:
+1. `<head>` — meta, fonts, CDN scripts, `<style>` block
+2. `<body>` — HTML sections (Hero → Crisis → Vision → HowItWorks → Map → Alerts → Cases → Resistance → Close)
+3. `<script>` — Demo data, spring physics, scroll engine, section renderers, Orb logic, initialization
+
+---
+
+### Task 1: Foundation — HTML Skeleton + CSS Variables + Global Styles
+
+**Files:**
+- Create: `frontend/index.html` (replace existing)
+
+- [ ] **Step 1: Write the complete HTML skeleton with CSS**
+
+Create `frontend/index.html` with the full `<head>`, CSS variables, reset, typography, grain overlay, glassmorphism utilities, and empty section containers. This is the foundation everything else builds on.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STAI — Sentri Intelligence | AMR Surveillance</title>
+<meta name="description" content="Real-time antimicrobial resistance surveillance across Africa. Report cases via Telegram, WhatsApp, and SMS.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   STAI — Sentri Intelligence
+   Cinematic Scrollytelling Dashboard
+   ═══════════════════════════════════════════════ */
+
+/* ── Reset ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Design Tokens ── */
+:root {
+  --bg-deep: #06090F;
+  --bg-surface: #0A0F1A;
+  --bg-glass: rgba(255,255,255,0.04);
+  --bg-glass-hover: rgba(255,255,255,0.07);
+  --border-glass: rgba(255,255,255,0.06);
+  --border-glass-hover: rgba(255,255,255,0.12);
+
+  --aurora-1: #4ADE80;
+  --aurora-2: #2DD4BF;
+  --aurora-3: #A78BFA;
+  --accent: #00F0FF;
+  --amber: #F59E0B;
+  --red: #EF4444;
+  --coral: #F97316;
+  --purple: #A78BFA;
+  --emerald: #2DD4BF;
+  --success: #22C55E;
+
+  --text: #EEF0F4;
+  --text-dim: #949BA8;
+  --text-muted: #5A6170;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Satoshi', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --blur: 24px;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── Base ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── Grain Overlay ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ── Typography ── */
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.1; }
+.mono { font-family: var(--font-mono); }
+
+/* ── Glass Card ── */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  transition: all 0.4s var(--spring-soft);
+}
+.glass:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass-hover);
+}
+
+/* ── Section Base ── */
+.section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.section-inner {
+  max-width: 1200px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Scroll Reveal ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s var(--spring-soft), transform 0.8s var(--spring);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-stagger { transition-delay: var(--delay, 0ms); }
+
+/* ── Aurora Mesh Background ── */
+.aurora-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.aurora-mesh::before,
+.aurora-mesh::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  animation: auroraShift 8s ease-in-out infinite alternate;
+}
+.aurora-mesh::before {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--aurora-1), transparent 70%);
+  top: -200px; left: -100px;
+}
+.aurora-mesh::after {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--aurora-3), transparent 70%);
+  bottom: -200px; right: -100px;
+  animation-delay: -4s;
+}
+
+@keyframes auroraShift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(60px, 40px) scale(1.15); }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .section { padding: 60px 16px; }
+  h1 { font-size: 2.5rem !important; }
+  h2 { font-size: 1.8rem !important; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Aurora Mesh Background -->
+<div class="aurora-mesh" id="aurora-mesh"></div>
+
+<!-- Living Orb -->
+<div id="orb" aria-label="STAI Assistant Orb" role="img">
+  <div class="orb-inner"></div>
+  <span class="orb-label">STAI</span>
+</div>
+
+<!-- Sections -->
+<section class="section" id="sec-hero" data-section="hero">
+  <div class="section-inner" id="hero-content"></div>
+  <div class="scroll-indicator" id="scroll-indicator">
+    <span>Scroll to explore</span>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12l7 7 7-7"/>
+    </svg>
+  </div>
+</section>
+
+<section class="section" id="sec-crisis" data-section="crisis">
+  <div class="section-inner" id="crisis-content"></div>
+</section>
+
+<section class="section" id="sec-vision" data-section="vision">
+  <div class="section-inner" id="vision-content"></div>
+</section>
+
+<section class="section" id="sec-how" data-section="how">
+  <div class="section-inner" id="how-content"></div>
+</section>
+
+<section class="section" id="sec-map" data-section="map">
+  <div class="section-inner" id="map-content"></div>
+</section>
+
+<section class="section" id="sec-alerts" data-section="alerts">
+  <div class="section-inner" id="alerts-content"></div>
+</section>
+
+<section class="section" id="sec-cases" data-section="cases">
+  <div class="section-inner" id="cases-content"></div>
+</section>
+
+<section class="section" id="sec-resistance" data-section="resistance">
+  <div class="section-inner" id="resistance-content"></div>
+</section>
+
+<section class="section" id="sec-close" data-section="close">
+  <div class="section-inner" id="close-content"></div>
+</section>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STAI — Core JavaScript
+//  (Sections populated in subsequent tasks)
+// ═══════════════════════════════════════════════
+
+const $ = id => document.getElementById(id);
+const $$ = q => document.querySelectorAll(q);
+
+// ── Spring Physics ──
+function spring(t, damping = 0.7) {
+  return 1 - Math.pow(Math.E, -6 * t) * Math.cos(damping * t * 12);
+}
+
+// ── Animated Counter ──
+function animateCounter(el, target, suffix = '', duration = 2000) {
+  const start = performance.now();
+  const isDecimal = target % 1 !== 0;
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const s = spring(t);
+    const val = target * s;
+    el.textContent = (isDecimal ? val.toFixed(1) : Math.round(val)) + suffix;
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ── Time Ago ──
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
+// ── Resistance Color ──
+function resColor(pct) {
+  if (pct > 60) return '#EF4444';
+  if (pct > 40) return '#F59E0B';
+  if (pct > 20) return '#00F0FF';
+  return '#4ADE80';
+}
+
+// ── Severity Color ──
+function sevColor(sev) {
+  return { critical: '#EF4444', high: '#F97316', medium: '#F59E0B', low: '#00F0FF' }[sev] || '#F59E0B';
+}
+
+console.log('[STAI] Core loaded');
+</script>
+
+</body>
+</html>
+```
+
+- [ ] **Step 2: Verify in browser**
+
+Open `frontend/index.html` in a browser. Expected: dark page with subtle aurora glow in corners, grain texture overlay, no content yet (empty sections).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add STAI foundation with design tokens and global styles"
+```
+
+---
+
+### Task 2: The Living Orb — CSS + JS
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Orb CSS**
+
+Insert before the `/* ── Section Base ── */` block in the `<style>`:
+
+```css
+/* ── Living Orb ── */
+#orb {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  z-index: 9999;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.6s var(--spring), box-shadow 0.6s var(--spring);
+}
+
+.orb-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--aurora-1), var(--aurora-2), var(--aurora-3), var(--aurora-1));
+  background-size: 200% 200%;
+  animation: orbBreathe 4s ease-in-out infinite, orbHue 8s linear infinite;
+  box-shadow: 0 0 30px rgba(45,212,191,0.25), 0 0 60px rgba(74,222,128,0.1);
+  filter: saturate(1.2);
+}
+
+.orb-label {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s var(--spring);
+  pointer-events: none;
+  text-shadow: 0 0 10px rgba(0,240,255,0.5);
+}
+
+#orb:hover .orb-label {
+  opacity: 1;
+  transform: scale(1);
+}
+
+#orb:hover {
+  transform: scale(1.15);
+}
+
+#orb.orb-alert .orb-inner {
+  animation: orbBreathe 4s ease-in-out infinite, orbAlert 1s ease-in-out;
+  box-shadow: 0 0 40px rgba(239,68,68,0.4), 0 0 80px rgba(239,68,68,0.15);
+}
+
+#orb.orb-warn .orb-inner {
+  box-shadow: 0 0 30px rgba(245,158,11,0.35), 0 0 60px rgba(245,158,11,0.12);
+}
+
+@keyframes orbBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes orbHue {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes orbAlert {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.95); }
+  75% { transform: scale(1.15); }
+}
+```
+
+- [ ] **Step 2: Add Orb JS**
+
+Add to the `<script>` block after the utility functions:
+
+```javascript
+// ── Living Orb ──
+const orb = $('orb');
+let currentSection = 'hero';
+
+function setOrbMood(section) {
+  orb.classList.remove('orb-alert', 'orb-warn');
+  if (section === 'crisis' || section === 'alerts') {
+    orb.classList.add('orb-warn');
+  }
+}
+
+// Flash orb on critical alert
+function flashOrb() {
+  orb.classList.add('orb-alert');
+  setTimeout(() => orb.classList.remove('orb-alert'), 1500);
+}
+
+// Orb click — quick insights panel
+orb.addEventListener('click', () => {
+  const panel = document.getElementById('orb-panel');
+  if (panel) {
+    panel.classList.toggle('open');
+  }
+});
+```
+
+- [ ] **Step 3: Verify**
+
+Open in browser. Bottom-right corner should show a breathing aurora circle. Hover shows "STAI" label. Click does nothing yet (panel added later).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add Living Orb with breathing animation and mood states"
+```
+
+---
+
+### Task 3: Hero Section — "The Arrival"
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Hero CSS**
+
+Insert in `<style>` after the Orb styles:
+
+```css
+/* ── Hero Section ── */
+#sec-hero {
+  text-align: center;
+  min-height: 100vh;
+  position: relative;
+}
+
+.hero-logo {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 800;
+  letter-spacing: -2px;
+  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2), var(--aurora-3));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: auroraShift 8s ease-in-out infinite alternate;
+  margin-bottom: 16px;
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+  animation: heroReveal 1.2s var(--spring) 0.3s forwards;
+}
+
+.hero-tagline {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: heroReveal 1s var(--spring) 0.8s forwards;
+}
+
+.hero-sub {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto;
+  opacity: 0;
+  animation: heroReveal 1s var(--spring) 1.2s forwards;
+}
+
+@keyframes heroReveal {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.8; transform: translateX(-50%) translateY(8px); }
+}
+```
+
+- [ ] **Step 2: Add Hero HTML**
+
+Replace the `#hero-content` innerHTML by adding to `<script>`:
+
+```javascript
+// ── Hero Section ──
+function renderHero() {
+  $('hero-content').innerHTML = `
+    <h1 class="hero-logo">STAI</h1>
+    <p class="hero-tagline">Sentri Intelligence</p>
+    <p class="hero-sub">Real-time antimicrobial resistance surveillance across Africa. Report via Telegram, WhatsApp & SMS.</p>
+  `;
+}
+renderHero();
+```
+
+- [ ] **Step 3: Verify**
+
+Full-screen hero with "STAI" in aurora gradient, "Sentri Intelligence" subtitle, scroll indicator at bottom. Logo animates in on load.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add hero section with animated logo reveal"
+```
+
+---
+
+### Task 4: Crisis Section — "Silent Pandemic"
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Crisis CSS**
+
+```css
+/* ── Crisis Section ── */
+#sec-crisis {
+  text-align: center;
+}
+
+.crisis-headline {
+  font-family: var(--font-mono);
+  font-size: clamp(4rem, 12vw, 8rem);
+  font-weight: 700;
+  color: var(--red);
+  line-height: 1;
+  margin-bottom: 8px;
+  text-shadow: 0 0 60px rgba(239,68,68,0.2);
+}
+
+.crisis-label {
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  margin-bottom: 48px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.stat-card {
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.stat-change {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-top: 6px;
+}
+.stat-change.up { color: var(--success); }
+.stat-change.down { color: var(--red); }
+```
+
+- [ ] **Step 2: Add Crisis JS**
+
+```javascript
+// ── Crisis Section ──
+function renderCrisis() {
+  const stats = [
+    { val: 250, label: 'Cases Reported', change: '+12.5%', dir: 'up' },
+    { val: 15, label: 'Districts Covered', change: '', dir: '' },
+    { val: 12, label: 'Drugs Tracked', change: '', dir: '' },
+    { val: 10, label: 'Active Alerts', change: '-8.3%', dir: 'down' },
+  ];
+
+  $('crisis-content').innerHTML = `
+    <div class="reveal">
+      <div class="crisis-headline mono" id="crisis-counter">0</div>
+      <p class="crisis-label">deaths per year from drug-resistant infections</p>
+    </div>
+    <div class="stats-grid">
+      ${stats.map((s, i) => `
+        <div class="glass stat-card reveal reveal-stagger" style="--delay:${i * 120}ms">
+          <div class="stat-value mono" data-count="${s.val}">0</div>
+          <div class="stat-label">${s.label}</div>
+          ${s.change ? `<div class="stat-change ${s.dir}">${s.dir === 'up' ? '↑' : '↓'} ${s.change}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+renderCrisis();
+```
+
+- [ ] **Step 3: Verify**
+
+Crisis section shows "1.27M" counter (red, large) + 4 glass stat cards. Cards stagger in on scroll.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add crisis section with animated counter and stat cards"
+```
+
+---
+
+### Task 5: Vision + How It Works Sections
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Vision + How CSS**
+
+```css
+/* ── Vision Section ── */
+#sec-vision {
+  text-align: center;
+}
+
+.vision-text {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--text);
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.3;
+}
+
+.vision-text .word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s var(--spring);
+  margin-right: 0.3em;
+}
+.vision-text .word.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.vision-text .highlight {
+  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── How It Works ── */
+#sec-how {
+  text-align: center;
+}
+
+.how-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 48px;
+  color: var(--text);
+}
+
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 800px;
+  margin: 0 auto 40px;
+}
+
+.channel-card {
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.channel-icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+}
+
+.channel-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.channel-desc {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.pipeline-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 24px 0;
+}
+
+.pipeline-arrow .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--aurora-2);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+@media (max-width: 768px) {
+  .channels-grid { grid-template-columns: 1fr; max-width: 320px; }
+}
+```
+
+- [ ] **Step 2: Add Vision + How JS**
+
+```javascript
+// ── Vision Section ──
+function renderVision() {
+  const words = 'STAI sees resistance before it spreads.'.split(' ');
+  $('vision-content').innerHTML = `
+    <p class="vision-text">
+      ${words.map((w, i) => {
+        const isHighlight = w === 'resistance' || w === 'spreads.';
+        return `<span class="word ${isHighlight ? 'highlight' : ''}" style="transition-delay:${i * 80}ms">${w}</span>`;
+      }).join('')}
+    </p>
+  `;
+}
+renderVision();
+
+// ── How It Works ──
+function renderHow() {
+  const channels = [
+    { icon: '📱', name: 'Telegram', desc: 'Report cases via bot commands. Structured data collection.' },
+    { icon: '💬', name: 'WhatsApp', desc: 'Meta API integration. Reach millions across Africa.' },
+    { icon: '📟', name: 'SMS / USSD', desc: 'Works on feature phones. Zero data requirement.' },
+  ];
+
+  $('how-content').innerHTML = `
+    <h2 class="how-title reveal">Three Channels. One Intelligence.</h2>
+    <div class="channels-grid">
+      ${channels.map((c, i) => `
+        <div class="glass channel-card reveal reveal-stagger" style="--delay:${i * 150}ms">
+          <div class="channel-icon">${c.icon}</div>
+          <div class="channel-name">${c.name}</div>
+          <div class="channel-desc">${c.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="pipeline-arrow reveal">
+      <span>Field Reports</span>
+      <span class="dot"></span>
+      <span class="dot" style="animation-delay:0.3s"></span>
+      <span class="dot" style="animation-delay:0.6s"></span>
+      <span>STAI Processing</span>
+      <span class="dot" style="animation-delay:0.9s"></span>
+      <span class="dot" style="animation-delay:1.2s"></span>
+      <span class="dot" style="animation-delay:1.5s"></span>
+      <span>Dashboard</span>
+    </div>
+  `;
+}
+renderHow();
+```
+
+- [ ] **Step 3: Verify**
+
+Vision section: words appear one by one with spring animation. "resistance" and "spreads." are highlighted in aurora gradient. How section: 3 glass cards with pipeline arrow below.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add vision and how-it-works sections"
+```
+
+---
+
+### Task 6: Demo Data + API Fallback
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add demo data block**
+
+Insert at the top of `<script>`, before the utility functions:
+
+```javascript
+// ═══════════════════════════════════════════════
+//  STAI — Demo Data (GitHub Pages fallback)
+// ═══════════════════════════════════════════════
+
+const DISTRICT_COORDS = {
+  Lagos: [3.3792, 6.5244], Accra: [-0.187, 5.6037], Kumasi: [-1.6244, 6.6885],
+  Abuja: [7.3986, 9.0765], Dakar: [-17.4677, 14.7167], Nairobi: [36.8219, -1.2921],
+  'Dar es Salaam': [39.2083, -6.7924], Kampala: [32.5825, 0.3476],
+  'Addis Ababa': [38.7469, 9.032], Mombasa: [39.6682, -4.0435],
+  Lusaka: [28.3228, -15.3875], Harare: [31.0335, -17.8252],
+  Lilongwe: [33.7741, -13.9626], Johannesburg: [28.0473, -26.2041],
+  Kinshasa: [15.2663, -4.4419],
+};
+
+const DEMO = {
+  stats: { total_cases: 250, total_cases_change: 12.5, active_alerts: 10, active_alerts_change: -8.3, avg_resistance_pct: 38.4, avg_resistance_change: 3.2, active_chws: 45, cases_this_week: 47, districts_covered: 15 },
+  map: [
+    { district: 'Lagos', region: 'West Africa', avg_resistance_pct: 52.3, top_drug: 'Amoxicillin', top_resistance: 72, active_alerts: 2, drugs: [{ drug: 'Amoxicillin', pct: 72 }, { drug: 'Penicillin', pct: 65 }, { drug: 'Ciprofloxacin', pct: 67 }] },
+    { district: 'Accra', region: 'West Africa', avg_resistance_pct: 45.1, top_drug: 'Penicillin', top_resistance: 78, active_alerts: 1, drugs: [{ drug: 'Penicillin', pct: 78 }, { drug: 'Amoxicillin', pct: 62 }] },
+    { district: 'Nairobi', region: 'East Africa', avg_resistance_pct: 38.7, top_drug: 'Ceftriaxone', top_resistance: 52, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', pct: 52 }, { drug: 'Ciprofloxacin', pct: 35 }] },
+    { district: 'Kampala', region: 'East Africa', avg_resistance_pct: 34.2, top_drug: 'Azithromycin', top_resistance: 44, active_alerts: 1, drugs: [{ drug: 'Azithromycin', pct: 44 }, { drug: 'Penicillin', pct: 38 }] },
+    { district: 'Kinshasa', region: 'Central Africa', avg_resistance_pct: 41.8, top_drug: 'Meropenem', top_resistance: 72, active_alerts: 1, drugs: [{ drug: 'Meropenem', pct: 72 }, { drug: 'Ceftriaxone', pct: 45 }] },
+    { district: 'Johannesburg', region: 'Southern Africa', avg_resistance_pct: 36.5, top_drug: 'Gentamicin', top_resistance: 48, active_alerts: 1, drugs: [{ drug: 'Gentamicin', pct: 48 }, { drug: 'Ciprofloxacin', pct: 32 }] },
+    { district: 'Dar es Salaam', region: 'East Africa', avg_resistance_pct: 29.4, top_drug: 'Amoxicillin', top_resistance: 55, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', pct: 55 }, { drug: 'Penicillin', pct: 42 }] },
+    { district: 'Addis Ababa', region: 'East Africa', avg_resistance_pct: 31.6, top_drug: 'Ciprofloxacin', top_resistance: 38, active_alerts: 1, drugs: [{ drug: 'Ciprofloxacin', pct: 38 }, { drug: 'Amoxicillin', pct: 45 }] },
+    { district: 'Mombasa', region: 'East Africa', avg_resistance_pct: 33.1, top_drug: 'Ceftriaxone', top_resistance: 41, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', pct: 41 }, { drug: 'Amoxicillin', pct: 48 }] },
+    { district: 'Lusaka', region: 'Southern Africa', avg_resistance_pct: 27.8, top_drug: 'Penicillin', top_resistance: 45, active_alerts: 0, drugs: [{ drug: 'Penicillin', pct: 45 }, { drug: 'Erythromycin', pct: 32 }] },
+    { district: 'Harare', region: 'Southern Africa', avg_resistance_pct: 25.3, top_drug: 'Erythromycin', top_resistance: 40, active_alerts: 0, drugs: [{ drug: 'Erythromycin', pct: 40 }, { drug: 'Penicillin', pct: 35 }] },
+    { district: 'Lilongwe', region: 'Southern Africa', avg_resistance_pct: 30.2, top_drug: 'Penicillin', top_resistance: 35, active_alerts: 1, drugs: [{ drug: 'Penicillin', pct: 35 }, { drug: 'Amoxicillin', pct: 42 }] },
+    { district: 'Kumasi', region: 'West Africa', avg_resistance_pct: 39.7, top_drug: 'Amoxicillin', top_resistance: 60, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', pct: 60 }, { drug: 'Penicillin', pct: 52 }] },
+    { district: 'Abuja', region: 'West Africa', avg_resistance_pct: 35.4, top_drug: 'Clindamycin', top_resistance: 33, active_alerts: 1, drugs: [{ drug: 'Clindamycin', pct: 33 }, { drug: 'Amoxicillin', pct: 50 }] },
+    { district: 'Dakar', region: 'West Africa', avg_resistance_pct: 28.9, top_drug: 'Amoxicillin', top_resistance: 48, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', pct: 48 }, { drug: 'Penicillin', pct: 40 }] },
+  ],
+  alerts: [
+    { severity: 'critical', title: 'Ciprofloxacin-Resistant E. coli Outbreak', message: 'Lagos Island: 67% of E. coli isolates resistant. Cluster linked to contaminated water.', district: 'Lagos', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 14400000).toISOString() },
+    { severity: 'critical', title: 'Carbapenem Resistance Emerging', message: 'Kinshasa: K. pneumoniae resistant to meropenem. Last-resort antibiotics compromised.', district: 'Kinshasa', drug: 'Meropenem', created_at: new Date(Date.now() - 28800000).toISOString() },
+    { severity: 'critical', title: 'MRSA-like Penicillin Resistance', message: 'Accra: 78% S. aureus resistant to penicillin. Wound infection cluster.', district: 'Accra', drug: 'Penicillin', created_at: new Date(Date.now() - 43200000).toISOString() },
+    { severity: 'high', title: 'ESBL K. pneumoniae Cluster', message: 'Nairobi: 5 MDR K. pneumoniae cases in ICU. 3rd-gen cephalosporins failed.', district: 'Nairobi', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 64800000).toISOString() },
+    { severity: 'high', title: 'Azithromycin-Resistant Gonorrhea', message: 'Kampala: 44% N. gonorrhoeae resistant. STI treatment failures reported.', district: 'Kampala', drug: 'Azithromycin', created_at: new Date(Date.now() - 86400000).toISOString() },
+    { severity: 'high', title: 'MDR Pseudomonas in ICU', message: 'Johannesburg: Multi-drug resistant P. aeruginosa. Limited options remain.', district: 'Johannesburg', drug: 'Gentamicin', created_at: new Date(Date.now() - 129600000).toISOString() },
+    { severity: 'medium', title: 'ESBL E. coli in Pediatrics', message: 'Mombasa: ESBL-producing E. coli in pediatric UTI. Linked to poultry antibiotics.', district: 'Mombasa', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 172800000).toISOString() },
+    { severity: 'medium', title: 'Ciprofloxacin-Resistant Typhoid', message: 'Addis Ababa: S. typhi resistance rising. Azithromycin alternative showing efficacy.', district: 'Addis Ababa', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 259200000).toISOString() },
+  ],
+  cases: [
+    { case_id: 'a1b2c3d4', source: 'telegram', complaint: 'Fever with chills for 5 days, no response to amoxicillin', district: 'Lagos', severity: 'severe', patient_age_years: 34, patient_sex: 'male', created_at: new Date(Date.now() - 7200000).toISOString() },
+    { case_id: 'e5f6g7h8', source: 'whatsapp', complaint: 'Productive cough with yellow sputum, chest pain', district: 'Nairobi', severity: 'moderate', patient_age_years: 28, patient_sex: 'female', created_at: new Date(Date.now() - 18000000).toISOString() },
+    { case_id: 'i9j0k1l2', source: 'telegram', complaint: 'Burning urination, frequency, suprapubic pain for 3 days', district: 'Accra', severity: 'mild', patient_age_years: 45, patient_sex: 'female', created_at: new Date(Date.now() - 28800000).toISOString() },
+    { case_id: 'm3n4o5p6', source: 'ussd', complaint: 'Infected surgical wound with purulent discharge', district: 'Kampala', severity: 'critical', patient_age_years: 62, patient_sex: 'male', created_at: new Date(Date.now() - 43200000).toISOString() },
+    { case_id: 'q7r8s9t0', source: 'whatsapp', complaint: 'Persistent watery diarrhea with dehydration signs', district: 'Kinshasa', severity: 'moderate', patient_age_years: 8, patient_sex: 'male', created_at: new Date(Date.now() - 57600000).toISOString() },
+    { case_id: 'u1v2w3x4', source: 'telegram', complaint: 'Severe headache, neck stiffness, photophobia, fever 39.5C', district: 'Lagos', severity: 'critical', patient_age_years: 19, patient_sex: 'female', created_at: new Date(Date.now() - 72000000).toISOString() },
+    { case_id: 'y5z6a7b8', source: 'manual', complaint: 'Joint pain with swelling, limited ROM — right knee', district: 'Johannesburg', severity: 'moderate', patient_age_years: 55, patient_sex: 'male', created_at: new Date(Date.now() - 86400000).toISOString() },
+    { case_id: 'c9d0e1f2', source: 'sms', complaint: 'Non-healing ulcer on foot, surrounding cellulitis', district: 'Dar es Salaam', severity: 'severe', patient_age_years: 71, patient_sex: 'female', created_at: new Date(Date.now() - 108000000).toISOString() },
+    { case_id: 'g3h4i5j6', source: 'telegram', complaint: 'High fever with rash, myalgia, severe fatigue', district: 'Addis Ababa', severity: 'moderate', patient_age_years: 25, patient_sex: 'male', created_at: new Date(Date.now() - 129600000).toISOString() },
+    { case_id: 'k7l8m9n0', source: 'whatsapp', complaint: 'Dysuria with cloudy urine, foul odor, previous UTI', district: 'Mombasa', severity: 'mild', patient_age_years: 38, patient_sex: 'female', created_at: new Date(Date.now() - 151200000).toISOString() },
+  ],
+  drugs: [
+    { drug: 'Penicillin', pct: 78 }, { drug: 'Amoxicillin', pct: 72 }, { drug: 'Meropenem', pct: 72 },
+    { drug: 'Ciprofloxacin', pct: 67 }, { drug: 'Erythromycin', pct: 40 }, { drug: 'Ceftriaxone', pct: 52 },
+    { drug: 'Azithromycin', pct: 44 }, { drug: 'Gentamicin', pct: 48 }, { drug: 'Doxycycline', pct: 22 },
+    { drug: 'Clindamycin', pct: 33 }, { drug: 'Levofloxacin', pct: 28 }, { drug: 'Vancomycin', pct: 12 },
+  ].sort((a, b) => b.pct - a.pct),
+};
+
+// Build trend data
+(function() {
+  const dates = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  const combos = { 'Amoxicillin · Lagos': 68, 'Ciprofloxacin · Lagos': 62, 'Ceftriaxone · Nairobi': 48, 'Penicillin · Accra': 74, 'Meropenem · Kinshasa': 65, 'Gentamicin · Johannesburg': 44 };
+  const series = {};
+  Object.entries(combos).forEach(([k, v]) => {
+    series[k] = dates.map((_, i) => +(v + (i - 15) * 0.6 + Math.sin(i) * 2).toFixed(1));
+  });
+  DEMO.trends = { dates, series };
+})();
+
+const API_BASE = window.location.origin;
+
+const api = async (path) => {
+  try {
+    const r = await fetch(API_BASE + path, { signal: AbortSignal.timeout(2000) });
+    if (!r.ok) throw new Error('fail');
+    return r.json();
+  } catch { return null; }
+};
+```
+
+- [ ] **Step 2: Verify**
+
+Open browser console. Should see `[STAI] Core loaded`. No errors. Demo data accessible via `DEMO` global.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add demo data with API fallback for static hosting"
+```
+
+---
+
+### Task 7: Scroll Engine — IntersectionObserver + Section Detection
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add scroll engine JS**
+
+```javascript
+// ═══════════════════════════════════════════════
+//  Scroll Engine
+// ═══════════════════════════════════════════════
+
+// Reveal on scroll
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+function initReveals() {
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+}
+
+// Section detection for Orb mood
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      currentSection = entry.target.dataset.section;
+      setOrbMood(currentSection);
+    }
+  });
+}, { threshold: 0.4 });
+
+document.querySelectorAll('.section[data-section]').forEach(s => sectionObserver.observe(s));
+
+// Aurora mesh parallax
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 30;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 30;
+  const mesh = $('aurora-mesh');
+  if (mesh) {
+    mesh.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+  }
+});
+
+// Crisis counter animation on reveal
+const crisisObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const counter = $('crisis-counter');
+      if (counter && !counter.dataset.animated) {
+        counter.dataset.animated = '1';
+        animateCounter(counter, 1.27, 'M', 2500);
+      }
+      // Animate stat cards
+      entry.target.querySelectorAll('.stat-value[data-count]').forEach(el => {
+        if (!el.dataset.animated) {
+          el.dataset.animated = '1';
+          animateCounter(el, parseInt(el.dataset.count), '', 1800);
+        }
+      });
+      crisisObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+// Vision word reveal
+const visionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.word').forEach((w, i) => {
+        setTimeout(() => w.classList.add('visible'), i * 80);
+      });
+      visionObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+function initSectionObservers() {
+  const crisisEl = $('sec-crisis');
+  if (crisisEl) crisisObserver.observe(crisisEl);
+  const visionEl = $('sec-vision');
+  if (visionEl) visionObserver.observe(visionEl);
+}
+
+// Hide scroll indicator on scroll
+let scrollIndicatorHidden = false;
+window.addEventListener('scroll', () => {
+  if (!scrollIndicatorHidden && window.scrollY > 100) {
+    const si = $('scroll-indicator');
+    if (si) si.style.opacity = '0';
+    scrollIndicatorHidden = true;
+  }
+}, { passive: true });
+
+console.log('[STAI] Scroll engine loaded');
+```
+
+- [ ] **Step 2: Init at bottom of script**
+
+Add at the very end of `<script>`:
+
+```javascript
+// ── Initialize ──
+document.addEventListener('DOMContentLoaded', () => {
+  initReveals();
+  initSectionObservers();
+  console.log('[STAI] Initialized');
+});
+```
+
+- [ ] **Step 3: Verify**
+
+Scroll down. Crisis section: counter animates to 1.27M, stat cards stagger in. Vision section: words appear one by one. Orb changes mood per section.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add scroll engine with section detection and reveal animations"
+```
+
+---
+
+### Task 8: Map Section — D3.js Africa
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Map CSS**
+
+```css
+/* ── Map Section ── */
+#sec-map { padding-top: 40px; }
+
+.map-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.map-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 32px;
+}
+
+.map-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  aspect-ratio: 1.3;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: rgba(6,9,15,0.6);
+}
+
+.map-container svg { width: 100%; height: 100%; }
+
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10,15,26,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass-hover);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+  z-index: 100;
+  min-width: 180px;
+}
+.map-tooltip.show { opacity: 1; transform: translateY(0); }
+.map-tooltip .tt-district { font-family: var(--font-display); font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.map-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; margin: 3px 0; color: var(--text-dim); }
+.map-tooltip .tt-val { font-family: var(--font-mono); color: var(--text); }
+```
+
+- [ ] **Step 2: Add Map JS**
+
+```javascript
+// ── Map Section ──
+async function renderMap() {
+  $('map-content').innerHTML = `
+    <h2 class="map-title reveal">Africa Under Watch</h2>
+    <p class="map-subtitle reveal">15 districts. Real-time resistance monitoring.</p>
+    <div class="map-container reveal" id="map-svg-wrap">
+      <div class="map-tooltip" id="map-tooltip"></div>
+    </div>
+  `;
+
+  try {
+    const resp = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+    const world = await resp.json();
+    const africa = topojson.feature(world, world.objects.countries).features.filter(f => {
+      const c = f.id;
+      return c >= 12 && c <= 90 || [12,24,72,108,120,132,140,148,174,178,180,204,231,232,262,266,270,288,324,384,404,426,430,434,450,454,466,478,480,504,508,516,562,566,624,638,646,678,686,694,706,710,716,728,729,732,736,748,768,788,800,834,854,894].includes(parseInt(c));
+    });
+
+    const wrap = $('map-svg-wrap');
+    const width = wrap.clientWidth;
+    const height = wrap.clientHeight;
+
+    const svg = d3.select(wrap).append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    const projection = d3.geoMercator()
+      .center([20, 2])
+      .scale(width / 1.2)
+      .translate([width / 2, height / 2]);
+
+    const path = d3.geoPath().projection(projection);
+
+    // Draw Africa
+    svg.append('g').selectAll('path')
+      .data(africa).enter().append('path')
+      .attr('d', path)
+      .attr('fill', 'rgba(255,255,255,0.03)')
+      .attr('stroke', 'rgba(255,255,255,0.06)')
+      .attr('stroke-width', 0.5);
+
+    // Arc connections
+    const arcPairs = [['Lagos','Accra'],['Nairobi','Mombasa'],['Kampala','Nairobi'],['Johannesburg','Lusaka'],['Kinshasa','Lagos'],['Addis Ababa','Nairobi'],['Accra','Kumasi'],['Dar es Salaam','Mombasa'],['Harare','Lusaka'],['Abuja','Lagos'],['Dakar','Accra'],['Lilongwe','Lusaka']];
+
+    const defs = svg.append('defs');
+    arcPairs.forEach(([a, b], i) => {
+      const ca = DISTRICT_COORDS[a], cb = DISTRICT_COORDS[b];
+      if (!ca || !cb) return;
+      const pa = projection(ca), pb = projection(cb);
+      if (!pa || !pb) return;
+      const grad = defs.append('linearGradient').attr('id', `arc-${i}`)
+        .attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '0%');
+      grad.append('stop').attr('offset', '0%').attr('stop-color', 'var(--aurora-1)').attr('stop-opacity', 0.3);
+      grad.append('stop').attr('offset', '100%').attr('stop-color', 'var(--aurora-3)').attr('stop-opacity', 0.3);
+
+      const midX = (pa[0] + pb[0]) / 2;
+      const midY = (pa[1] + pb[1]) / 2 - 30;
+      svg.append('path')
+        .attr('d', `M${pa[0]},${pa[1]} Q${midX},${midY} ${pb[0]},${pb[1]}`)
+        .attr('fill', 'none')
+        .attr('stroke', `url(#arc-${i})`)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '4,4')
+        .attr('opacity', 0.4);
+    });
+
+    // District points
+    const tooltip = $('map-tooltip');
+    const mapData = DEMO.map;
+
+    svg.append('g').selectAll('circle')
+      .data(mapData).enter().append('circle')
+      .attr('cx', d => { const c = DISTRICT_COORDS[d.district]; return c ? projection(c)[0] : 0; })
+      .attr('cy', d => { const c = DISTRICT_COORDS[d.district]; return c ? projection(c)[1] : 0; })
+      .attr('r', d => 4 + d.active_alerts * 2)
+      .attr('fill', d => resColor(d.avg_resistance_pct))
+      .attr('fill-opacity', 0.7)
+      .attr('stroke', d => resColor(d.avg_resistance_pct))
+      .attr('stroke-width', 1)
+      .attr('stroke-opacity', 0.3)
+      .style('cursor', 'pointer')
+      .style('filter', d => `drop-shadow(0 0 6px ${resColor(d.avg_resistance_pct)}40)`)
+      .on('mouseenter', function(event, d) {
+        d3.select(this).transition().duration(200).attr('r', 10);
+        const drugs = d.drugs.map(dr => `<div class="tt-row"><span>${dr.drug}</span><span class="tt-val" style="color:${resColor(dr.pct)}">${dr.pct}%</span></div>`).join('');
+        tooltip.innerHTML = `
+          <div class="tt-district">${d.district}</div>
+          <div class="tt-row"><span>Resistance</span><span class="tt-val">${d.avg_resistance_pct}%</span></div>
+          <div class="tt-row"><span>Top Drug</span><span class="tt-val">${d.top_drug}</span></div>
+          <div class="tt-row"><span>Alerts</span><span class="tt-val">${d.active_alerts}</span></div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0">
+          ${drugs}
+        `;
+        tooltip.classList.add('show');
+      })
+      .on('mousemove', function(event) {
+        const rect = wrap.getBoundingClientRect();
+        tooltip.style.left = (event.clientX - rect.left + 12) + 'px';
+        tooltip.style.top = (event.clientY - rect.top - 10) + 'px';
+      })
+      .on('mouseleave', function() {
+        d3.select(this).transition().duration(200).attr('r', d => 4 + d.active_alerts * 2);
+        tooltip.classList.remove('show');
+      });
+
+    // Pulse animation on dots
+    svg.selectAll('circle')
+      .append('animate')
+      .attr('attributeName', 'fill-opacity')
+      .attr('values', '0.7;0.4;0.7')
+      .attr('dur', '3s')
+      .attr('repeatCount', 'indefinite');
+
+  } catch (e) {
+    $('map-svg-wrap').innerHTML += '<p style="text-align:center;color:var(--text-muted);padding:40px">Map data unavailable</p>';
+  }
+}
+renderMap();
+```
+
+- [ ] **Step 3: Verify**
+
+D3 map of Africa with 15 glowing district points. Hover shows tooltip with resistance data and drug breakdown. Arc connections between linked districts. Points pulse.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add D3.js Africa map with district markers and tooltips"
+```
+
+---
+
+### Task 9: Alerts Section
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Alerts CSS**
+
+```css
+/* ── Alerts Section ── */
+#sec-alerts { text-align: center; }
+
+.alerts-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.alerts-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 40px;
+}
+
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.alert-card {
+  padding: 20px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.alert-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.alert-card.critical::before { background: var(--red); box-shadow: 0 0 12px rgba(239,68,68,0.3); }
+.alert-card.high::before { background: var(--coral); box-shadow: 0 0 12px rgba(249,115,22,0.3); }
+.alert-card.medium::before { background: var(--amber); box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: alertPulse 2s ease-in-out infinite;
+}
+.alert-dot.critical { background: var(--red); }
+.alert-dot.high { background: var(--coral); }
+.alert-dot.medium { background: var(--amber); }
+
+@keyframes alertPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
+}
+
+.alert-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.alert-msg {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.alert-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alert-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+}
+```
+
+- [ ] **Step 2: Add Alerts JS**
+
+```javascript
+// ── Alerts Section ──
+function renderAlerts() {
+  $('alerts-content').innerHTML = `
+    <h2 class="alerts-title reveal">Active Threats</h2>
+    <p class="alerts-subtitle reveal">${DEMO.alerts.length} alerts across ${DEMO.stats.districts_covered} districts</p>
+    <div class="alerts-grid">
+      ${DEMO.alerts.map((a, i) => `
+        <div class="glass alert-card ${a.severity} reveal reveal-stagger" style="--delay:${i * 100}ms">
+          <div class="alert-header">
+            <span class="alert-dot ${a.severity}"></span>
+            <span class="alert-title">${a.title}</span>
+          </div>
+          <p class="alert-msg">${a.message}</p>
+          <div class="alert-meta">
+            <span class="alert-tag">${a.district}</span>
+            <span class="alert-tag">${a.drug}</span>
+            <span class="alert-tag">${timeAgo(a.created_at)}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+renderAlerts();
+```
+
+- [ ] **Step 3: Verify**
+
+Alert cards with severity-colored left borders, pulsing dots, staggered reveal on scroll.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add alerts section with severity cards"
+```
+
+---
+
+### Task 10: Cases Table + Resistance Bars + Trend Chart + Close
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add Cases + Resistance + Close CSS**
+
+```css
+/* ── Cases Section ── */
+#sec-cases { text-align: center; }
+
+.cases-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+
+.cases-table-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  overflow-x: auto;
+  border-radius: var(--radius);
+}
+
+.cases-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cases-table th {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-glass);
+  position: sticky;
+  top: 0;
+  background: var(--bg-deep);
+}
+
+.cases-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-dim);
+  text-align: left;
+}
+
+.cases-table tr { transition: background 0.2s; }
+.cases-table tr:hover { background: rgba(255,255,255,0.03); }
+
+.case-id {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.source-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.source-badge.telegram { background: rgba(0,136,204,0.15); color: #0088cc; }
+.source-badge.whatsapp { background: rgba(37,211,102,0.15); color: #25d366; }
+.source-badge.ussd { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.source-badge.sms { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.source-badge.manual { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+
+.severity-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ── Resistance Section ── */
+#sec-resistance { text-align: center; }
+
+.resistance-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+
+.resistance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.drug-bars { display: flex; flex-direction: column; gap: 10px; }
+
+.drug-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.drug-name {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  width: 110px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.drug-bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.drug-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  width: 0;
+  transition: width 1.2s var(--spring);
+}
+
+.drug-pct {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  width: 40px;
+  text-align: left;
+}
+
+.chart-wrap {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.chart-wrap canvas { width: 100% !important; height: 280px !important; }
+
+@media (max-width: 768px) {
+  .resistance-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Close Section ── */
+#sec-close {
+  text-align: center;
+  min-height: 60vh;
+}
+
+.close-text {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2), var(--aurora-3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.close-sub {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  margin-bottom: 40px;
+}
+
+.close-links {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.close-link {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 8px 20px;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s var(--spring-soft);
+}
+.close-link:hover {
+  border-color: var(--accent);
+  background: rgba(0,240,255,0.05);
+}
+
+.close-footer {
+  margin-top: 60px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+```
+
+- [ ] **Step 2: Add Cases + Resistance + Close JS**
+
+```javascript
+// ── Cases Section ──
+function renderCases() {
+  $('cases-content').innerHTML = `
+    <h2 class="cases-title reveal">Field Reports</h2>
+    <div class="glass cases-table-wrap reveal">
+      <table class="cases-table">
+        <thead><tr>
+          <th>ID</th><th>Source</th><th>Complaint</th>
+          <th>District</th><th>Severity</th><th>Patient</th><th>Time</th>
+        </tr></thead>
+        <tbody>
+          ${DEMO.cases.map((c, i) => `
+            <tr class="reveal-stagger" style="--delay:${i * 50}ms; opacity:0; animation: caseReveal 0.5s var(--spring) ${i * 50}ms forwards;">
+              <td><span class="case-id">${c.case_id.slice(0, 8)}</span></td>
+              <td><span class="source-badge ${c.source}">${c.source}</span></td>
+              <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.complaint}</td>
+              <td>${c.district}</td>
+              <td><span class="severity-dot" style="background:${sevColor(c.severity)}"></span>${c.severity}</td>
+              <td style="font-family:var(--font-mono);font-size:0.75rem">${c.patient_age_years}y ${c.patient_sex?.charAt(0) || '?'}</td>
+              <td style="font-size:0.75rem;color:var(--text-muted)">${timeAgo(c.created_at)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+renderCases();
+
+// ── Resistance Section ──
+function renderResistance() {
+  const drugBars = DEMO.drugs.map((d, i) => `
+    <div class="drug-row reveal reveal-stagger" style="--delay:${i * 60}ms">
+      <span class="drug-name">${d.drug}</span>
+      <div class="drug-bar-track">
+        <div class="drug-bar-fill" data-pct="${d.pct}" style="background: linear-gradient(90deg, ${resColor(d.pct)}80, ${resColor(d.pct)})"></div>
+      </div>
+      <span class="drug-pct" style="color:${resColor(d.pct)}">${d.pct}%</span>
+    </div>
+  `).join('');
+
+  $('resistance-content').innerHTML = `
+    <h2 class="resistance-title reveal">The Drug War</h2>
+    <div class="resistance-grid">
+      <div class="drug-bars">${drugBars}</div>
+      <div class="chart-wrap glass reveal">
+        <canvas id="trend-chart"></canvas>
+      </div>
+    </div>
+  `;
+
+  // Animate bars on reveal
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.drug-bar-fill').forEach(bar => {
+          bar.style.width = bar.dataset.pct + '%';
+        });
+        barObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  barObserver.observe($('sec-resistance'));
+
+  // Chart.js trend
+  const ctx = document.getElementById('trend-chart');
+  if (ctx && DEMO.trends) {
+    const colors = ['#4ADE80', '#2DD4BF', '#A78BFA', '#F59E0B', '#EF4444', '#00F0FF'];
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: DEMO.trends.dates.map(d => d.slice(5)),
+        datasets: Object.entries(DEMO.trends.series).map(([name, data], i) => ({
+          label: name,
+          data,
+          borderColor: colors[i % colors.length],
+          backgroundColor: colors[i % colors.length] + '10',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.4,
+          fill: false,
+        })),
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: '#949BA8', font: { family: "'JetBrains Mono'", size: 10 }, boxWidth: 12, padding: 12 } },
+          tooltip: { mode: 'index', intersect: false, backgroundColor: '#0A0F1A', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleFont: { family: "'JetBrains Mono'" }, bodyFont: { family: "'JetBrains Mono'" } },
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, maxTicksLimit: 8 } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, callback: v => v + '%' }, min: 0, max: 100 },
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      },
+    });
+  }
+}
+renderResistance();
+
+// ── Close Section ──
+function renderClose() {
+  $('close-content').innerHTML = `
+    <h2 class="close-text reveal">Built for Africa.<br>Built for the world.</h2>
+    <p class="close-sub reveal">Sentri Intelligence — AMR surveillance that works anywhere, on any device.</p>
+    <div class="close-links reveal">
+      <a href="https://github.com/teaminnovatorx/week02-demo" class="close-link" target="_blank">GitHub</a>
+      <a href="#sec-hero" class="close-link">Back to top</a>
+    </div>
+    <p class="close-footer reveal">STAI v0.2 · Sentri Intelligence · 2026</p>
+  `;
+}
+renderClose();
+
+// Case row reveal animation
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `@keyframes caseReveal { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }`;
+document.head.appendChild(styleSheet);
+```
+
+- [ ] **Step 3: Verify**
+
+Cases table with source badges, severity dots, staggered row reveals. Drug bars fill on scroll. Trend chart draws with 6 lines. Close section with aurora gradient text.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add cases table, resistance bars, trend chart, and close section"
+```
+
+---
+
+### Task 11: Polish — Final CSS + Responsive + Performance
+
+**Files:**
+- Modify: `frontend/index.html`
+
+- [ ] **Step 1: Add final polish CSS**
+
+Append to `<style>` before the closing `</style>`:
+
+```css
+/* ── Orb Quick Insights Panel ── */
+#orb-panel {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(10,15,26,0.95);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass-hover);
+  border-radius: var(--radius);
+  padding: 20px;
+  z-index: 9998;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+  transition: all 0.4s var(--spring);
+}
+#orb-panel.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+
+.orb-panel-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.orb-panel-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.8rem;
+}
+.orb-panel-stat:last-child { border-bottom: none; }
+.orb-panel-stat .label { color: var(--text-muted); }
+.orb-panel-stat .val { font-family: var(--font-mono); color: var(--text); }
+
+/* ── Section dividers ── */
+.section + .section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-glass), transparent);
+}
+
+/* ── Selection color ── */
+::selection {
+  background: rgba(45,212,191,0.3);
+  color: var(--text);
+}
+
+/* ── Mobile adjustments ── */
+@media (max-width: 768px) {
+  #orb { width: 48px; height: 48px; bottom: 16px; right: 16px; }
+  .orb-label { font-size: 8px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .alerts-grid { grid-template-columns: 1fr; }
+  .cases-table th:nth-child(3),
+  .cases-table td:nth-child(3) { display: none; }
+  #orb-panel { right: 16px; bottom: 80px; width: calc(100vw - 32px); }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .channels-grid { grid-template-columns: 1fr; }
+}
+```
+
+- [ ] **Step 2: Add Orb Panel HTML + JS**
+
+Insert after the `#orb` div in `<body>`:
+
+```html
+<div id="orb-panel">
+  <div class="orb-panel-title">Quick Insights</div>
+  <div id="orb-panel-body"></div>
+</div>
+```
+
+Add to `<script>`:
+
+```javascript
+// ── Orb Panel Content ──
+function updateOrbPanel() {
+  const body = $('orb-panel-body');
+  if (!body) return;
+  body.innerHTML = `
+    <div class="orb-panel-stat"><span class="label">Total Cases</span><span class="val">${DEMO.stats.total_cases}</span></div>
+    <div class="orb-panel-stat"><span class="label">Active Alerts</span><span class="val" style="color:var(--red)">${DEMO.stats.active_alerts}</span></div>
+    <div class="orb-panel-stat"><span class="label">Districts</span><span class="val">${DEMO.stats.districts_covered}</span></div>
+    <div class="orb-panel-stat"><span class="label">Avg Resistance</span><span class="val" style="color:var(--amber)">${DEMO.stats.avg_resistance_pct}%</span></div>
+    <div class="orb-panel-stat"><span class="label">This Week</span><span class="val">${DEMO.stats.cases_this_week}</span></div>
+    <div class="orb-panel-stat"><span class="label">CHWs Active</span><span class="val">${DEMO.stats.active_chws}</span></div>
+  `;
+}
+updateOrbPanel();
+```
+
+- [ ] **Step 3: Final verify**
+
+Full page scroll: Hero → Crisis → Vision → How → Map → Alerts → Cases → Resistance → Close. Orb breathes, reacts to sections, click opens panel. All sections animate on scroll. Responsive on mobile.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/index.html
+git commit -m "feat: add orb insights panel and final polish"
+```
+
+---
+
+### Task 12: Deploy — Push + Enable GitHub Pages
+
+**Files:**
+- No new files
+
+- [ ] **Step 1: Push to GitHub**
+
+```bash
+git push origin master
+```
+
+- [ ] **Step 2: Enable GitHub Pages**
+
+```bash
+gh api -X PUT repos/teaminnovatorx/week02-demo/pages \
+  -f build_type=legacy \
+  -f source='{"branch":"master","path":"/frontend"}'
+```
+
+If that fails, create a workflow-based deployment:
+
+```bash
+gh api -X PUT repos/teaminnovatorx/week02-demo/pages \
+  -f build_type=workflow
+```
+
+- [ ] **Step 3: Set custom domain**
+
+```bash
+gh api -X PUT repos/teaminnovatorx/week02-demo/pages \
+  -f cname=stai.is-a.software \
+  -f https_enforced=true
+```
+
+- [ ] **Step 4: Configure DNS**
+
+Instruct user to add a CNAME record:
+```
+stai.is-a.software → teaminnovatorx.github.io
+```
+
+- [ ] **Step 5: Verify deployment**
+
+```bash
+gh api repos/teaminnovatorx/week02-demo/pages
+```
+
+Expected: `"status": "built"` and `"url": "https://stai.is-a.software/"`
+
+- [ ] **Step 6: Final commit**
+
+```bash
+git log --oneline
+```
+
+Verify clean commit history with 12+ commits, all conventional, no AI references.
