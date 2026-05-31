@@ -1986,10 +1986,153 @@ class LiveDataEngine {
 
 const liveEngine = new LiveDataEngine();
 
+/* ═══════════════════════════════════════════════════════════
+   UI REACTIONS — Event Listeners
+   ═══════════════════════════════════════════════════════════ */
+
+// ── Case: New ──
+window.addEventListener('case:new', (e) => {
+  const c = e.detail;
+  const tbody = document.getElementById('cases-body');
+  if (!tbody) return;
+  const row = document.createElement('tr');
+  row.className = 'case-row-new';
+  row.innerHTML = `
+    <td><span class="case-id">${c.case_id}</span></td>
+    <td><span class="source-badge ${c.source}">${c.source}</span></td>
+    <td><span class="complaint-text">${c.complaint}</span></td>
+    <td class="hide-mobile"><span class="district-tag">${c.district}</span></td>
+    <td class="hide-mobile">
+      <span class="severity-badge">
+        <span class="severity-dot ${c.severity}"></span>
+        ${c.severity}
+      </span>
+    </td>
+    <td class="hide-mobile" style="font-size:11px;color:var(--text-dim)">${c.age}y ${c.sex === 'male' ? 'M' : 'F'}</td>
+    <td><span class="time-ago">${c.time}</span></td>
+  `;
+  tbody.insertBefore(row, tbody.firstChild);
+  row.classList.add('case-row-glow');
+  setTimeout(() => row.classList.remove('case-row-glow'), 2000);
+  while (tbody.children.length > 15) {
+    tbody.removeChild(tbody.lastChild);
+  }
+  const orb = document.getElementById('orb');
+  if (orb) {
+    orb.classList.add('orb-case-pulse');
+    setTimeout(() => orb.classList.remove('orb-case-pulse'), 500);
+  }
+});
+
+// ── Alert: New ──
+window.addEventListener('alert:new', (e) => {
+  const a = e.detail;
+  const grid = document.getElementById('alerts-grid');
+  if (!grid) return;
+  const card = document.createElement('div');
+  card.className = `alert-card glass ${a.severity} alert-card-new`;
+  card.innerHTML = `
+    <div class="alert-header">
+      <div class="alert-dot"></div>
+      <div class="alert-title">${a.title}</div>
+    </div>
+    <div class="alert-message">${a.message}</div>
+    <div class="alert-meta">
+      <span class="alert-tag">${a.district}</span>
+      <span class="alert-tag">${a.drug}</span>
+      <span class="alert-time">${a.time}</span>
+    </div>
+  `;
+  grid.insertBefore(card, grid.firstChild);
+  card.classList.add('alert-card-glow');
+  setTimeout(() => card.classList.remove('alert-card-glow'), 2000);
+  while (grid.children.length > 12) {
+    grid.removeChild(grid.lastChild);
+  }
+  const orb = document.getElementById('orb');
+  if (orb) {
+    if (a.severity === 'critical') {
+      orb.classList.add('orb-alert-red');
+      setTimeout(() => orb.classList.remove('orb-alert-red'), 700);
+      showAlertBanner(a);
+    } else {
+      orb.classList.add('orb-alert-amber');
+      setTimeout(() => orb.classList.remove('orb-alert-amber'), 3000);
+    }
+  }
+});
+
+// ── Stats: Update ──
+window.addEventListener('stats:update', (e) => {
+  const stats = e.detail;
+  const statCards = document.querySelectorAll('.stat-card');
+  statCards.forEach(card => {
+    const label = card.querySelector('.stat-label');
+    const value = card.querySelector('.stat-value');
+    if (!label || !value) return;
+    if (label.textContent.includes('Cases Reported')) {
+      animateCounter(value, stats.total_cases);
+      value.classList.add('stat-flash');
+      setTimeout(() => value.classList.remove('stat-flash'), 700);
+    }
+    if (label.textContent.includes('Active Alerts')) {
+      animateCounter(value, stats.active_alerts);
+      value.classList.add('stat-flash-red');
+      setTimeout(() => value.classList.remove('stat-flash-red'), 700);
+    }
+  });
+});
+
+// ── Alert Banner ──
+function showAlertBanner(alert) {
+  const container = document.getElementById('alert-banner-container');
+  if (!container) return;
+  const banner = document.createElement('div');
+  banner.className = 'alert-banner';
+  banner.innerHTML = `
+    <span class="alert-banner-dot"></span>
+    <span class="alert-banner-text"><strong>${alert.title}</strong> — ${alert.district}: ${alert.drug}</span>
+    <button class="alert-banner-dismiss" onclick="this.parentElement.classList.add('dismissing'); setTimeout(() => this.parentElement.remove(), 300)">&times;</button>
+  `;
+  container.appendChild(banner);
+  setTimeout(() => {
+    if (banner.parentElement) {
+      banner.classList.add('dismissing');
+      setTimeout(() => banner.remove(), 300);
+    }
+  }, 5000);
+  while (container.children.length > 3) {
+    container.removeChild(container.firstChild);
+  }
+}
+
+// ── Parallax Tilt ──
+function initParallaxTilt() {
+  const isTouchDevice = 'ontouchstart' in window;
+  if (isTouchDevice) return;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reducedMotion) return;
+  const tiltCards = document.querySelectorAll('.stat-card, .alert-card');
+  tiltCards.forEach(card => {
+    card.classList.add('parallax-tilt');
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = `perspective(800px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(800px) rotateY(0) rotateX(0)';
+    });
+  });
+}
+
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
   initReveals();
   initSectionObservers();
+  initParallaxTilt();
+  liveEngine.start();
   console.log('[STAI] Initialized');
 });
 
