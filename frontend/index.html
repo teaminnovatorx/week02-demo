@@ -12,39 +12,57 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-/* ═══════════════════════════════════════════════════════════
-   STAI — SENTRI INTELLIGENCE
+/* ═══════════════════════════════════════════════
+   STAI — Sentri Intelligence
    Cinematic Scrollytelling Dashboard
-   Apple Keynote Energy × Luxury Biotech
-   ═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════ */
 
+/* ── Reset ── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ── Design Tokens ── */
 :root {
   --bg-deep: #06090F;
-  --bg-card: rgba(255,255,255,0.03);
+  --bg-surface: #0A0F1A;
   --bg-glass: rgba(255,255,255,0.04);
+  --bg-glass-hover: rgba(255,255,255,0.07);
   --border-glass: rgba(255,255,255,0.06);
+  --border-glass-hover: rgba(255,255,255,0.12);
+
   --aurora-1: #4ADE80;
   --aurora-2: #2DD4BF;
   --aurora-3: #A78BFA;
   --accent: #00F0FF;
   --amber: #F59E0B;
   --red: #EF4444;
+  --coral: #F97316;
+  --purple: #A78BFA;
+  --emerald: #2DD4BF;
+  --success: #22C55E;
+
   --text: #EEF0F4;
   --text-dim: #949BA8;
   --text-muted: #5A6170;
+
   --font-display: 'Syne', sans-serif;
-  --font-body: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Satoshi', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --radius: 16px;
+
   --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --blur: 24px;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+/* ── Base ── */
 html {
   scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -52,220 +70,250 @@ body {
   background: var(--bg-deep);
   color: var(--text);
   overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
 }
 
-/* ── Grain overlay ── */
+/* ── Grain Overlay ── */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
   z-index: 10000;
-}
-
-/* ── Aurora mesh background ── */
-.aurora-mesh {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
   pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
 }
 
-.aurora-blob {
-  position: absolute;
+/* ── Typography ── */
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.1; }
+.mono { font-family: var(--font-mono); }
+
+/* ── Glass Card ── */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  transition: all 0.4s var(--spring-soft);
+}
+.glass:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass-hover);
+}
+
+/* ── Living Orb ── */
+#orb {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.15;
-  animation: auroraShift 12s ease-in-out infinite alternate;
+  z-index: 9999;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.6s var(--spring), box-shadow 0.6s var(--spring);
 }
 
-.aurora-blob:nth-child(1) {
-  width: 600px; height: 600px;
-  background: var(--aurora-1);
-  top: -200px; left: -100px;
-  animation-duration: 14s;
+.orb-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--aurora-1), var(--aurora-2), var(--aurora-3), var(--aurora-1));
+  background-size: 200% 200%;
+  animation: orbBreathe 4s ease-in-out infinite, orbHue 8s linear infinite;
+  box-shadow: 0 0 30px rgba(45,212,191,0.25), 0 0 60px rgba(74,222,128,0.1);
+  filter: saturate(1.2);
 }
 
-.aurora-blob:nth-child(2) {
-  width: 500px; height: 500px;
-  background: var(--aurora-2);
-  top: 40%; right: -150px;
-  animation-duration: 10s;
-  animation-delay: -3s;
+.orb-label {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s var(--spring);
+  pointer-events: none;
+  text-shadow: 0 0 10px rgba(0,240,255,0.5);
 }
 
-.aurora-blob:nth-child(3) {
-  width: 400px; height: 400px;
-  background: var(--aurora-3);
-  bottom: -100px; left: 30%;
-  animation-duration: 16s;
-  animation-delay: -6s;
+#orb:hover .orb-label {
+  opacity: 1;
+  transform: scale(1);
 }
 
-@keyframes auroraShift {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, -30px) scale(1.1); }
-  66% { transform: translate(-20px, 50px) scale(0.95); }
-  100% { transform: translate(30px, 20px) scale(1.05); }
+#orb:hover {
+  transform: scale(1.15);
 }
 
-/* ── Section base ── */
+#orb.orb-alert .orb-inner {
+  animation: orbBreathe 4s ease-in-out infinite, orbAlert 1s ease-in-out;
+  box-shadow: 0 0 40px rgba(239,68,68,0.4), 0 0 80px rgba(239,68,68,0.15);
+}
+
+#orb.orb-warn .orb-inner {
+  box-shadow: 0 0 30px rgba(245,158,11,0.35), 0 0 60px rgba(245,158,11,0.12);
+}
+
+@keyframes orbBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes orbHue {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes orbAlert {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.95); }
+  75% { transform: scale(1.15); }
+}
+
+/* ── Section Base ── */
 .section {
-  position: relative;
-  z-index: 1;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 80px 24px;
+  position: relative;
+  overflow: hidden;
 }
 
 .section-inner {
   max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
+  position: relative;
+  z-index: 2;
 }
 
-/* ── Glass card ── */
-.glass {
-  background: var(--bg-glass);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius);
-  transition: border-color 0.4s ease, box-shadow 0.4s ease;
-}
-
-.glass:hover {
-  border-color: rgba(255,255,255,0.12);
-  box-shadow: 0 0 40px rgba(0,240,255,0.04);
-}
-
-/* ── Typography ── */
-h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
-.mono { font-family: var(--font-mono); }
-.dim { color: var(--text-dim); }
-.muted { color: var(--text-muted); }
-.accent { color: var(--accent); }
-
-/* ── Scroll reveal ── */
+/* ── Scroll Reveal ── */
 .reveal {
   opacity: 0;
   transform: translateY(40px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.8s var(--spring-soft), transform 0.8s var(--spring);
 }
-
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
+.reveal-stagger { transition-delay: var(--delay, 0ms); }
 
-.reveal-left {
-  opacity: 0;
-  transform: translateX(-60px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal-left.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.reveal-right {
-  opacity: 0;
-  transform: translateX(60px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal-right.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.reveal-scale {
-  opacity: 0;
-  transform: scale(0.85);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal-scale.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Stagger delays */
-.delay-1 { transition-delay: 0.1s; }
-.delay-2 { transition-delay: 0.2s; }
-.delay-3 { transition-delay: 0.3s; }
-.delay-4 { transition-delay: 0.4s; }
-.delay-5 { transition-delay: 0.5s; }
-.delay-6 { transition-delay: 0.6s; }
-
-/* ═══════════════════════════════════════════════════════════
-   SECTION 0: HERO — THE ARRIVAL
-   ═══════════════════════════════════════════════════════════ */
-
-#hero {
-  min-height: 100vh;
-  text-align: center;
+/* ── Aurora Mesh Background ── */
+.aurora-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   overflow: hidden;
+}
+.aurora-mesh::before,
+.aurora-mesh::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  animation: auroraShift 8s ease-in-out infinite alternate;
+}
+.aurora-mesh::before {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--aurora-1), transparent 70%);
+  top: -200px; left: -100px;
+}
+.aurora-mesh::after {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--aurora-3), transparent 70%);
+  bottom: -200px; right: -100px;
+  animation-delay: -4s;
+}
+
+@keyframes auroraShift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(60px, 40px) scale(1.15); }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .section { padding: 60px 16px; }
+  h1 { font-size: 2.5rem !important; }
+  h2 { font-size: 1.8rem !important; }
+}
+
+/* ── Hero Section ── */
+#sec-hero {
+  text-align: center;
+  min-height: 100vh;
+  position: relative;
 }
 
 .hero-logo {
   font-family: var(--font-display);
-  font-size: clamp(48px, 10vw, 96px);
+  font-size: clamp(3rem, 8vw, 6rem);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -2px;
   background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2), var(--aurora-3));
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradientShift 8s ease-in-out infinite;
-  margin-bottom: 8px;
-}
-
-@keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-.hero-subtitle {
-  font-family: var(--font-display);
-  font-size: clamp(18px, 3vw, 28px);
-  font-weight: 500;
-  color: var(--text-dim);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+  animation: heroReveal 1.2s var(--spring) 0.3s forwards, auroraShift 8s ease-in-out infinite alternate;
 }
 
 .hero-tagline {
-  font-size: clamp(14px, 2vw, 18px);
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: heroReveal 1s var(--spring) 0.8s forwards;
+}
+
+.hero-sub {
+  font-size: 0.95rem;
   color: var(--text-muted);
-  max-width: 500px;
-  margin: 0 auto 60px;
-  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+  opacity: 0;
+  animation: heroReveal 1s var(--spring) 1.2s forwards;
 }
 
-/* Hero particles canvas */
-#hero-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+@keyframes heroReveal {
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.hero-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* Scroll indicator */
 .scroll-indicator {
   position: absolute;
   bottom: 40px;
@@ -275,59 +323,37 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  opacity: 0.4;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   animation: scrollPulse 2s ease-in-out infinite;
 }
 
-.scroll-indicator span {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.scroll-arrow {
-  width: 20px;
-  height: 20px;
-  border-right: 1.5px solid var(--text-muted);
-  border-bottom: 1.5px solid var(--text-muted);
-  transform: rotate(45deg);
-  animation: scrollBounce 2s ease-in-out infinite;
-}
-
 @keyframes scrollPulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.8; transform: translateX(-50%) translateY(8px); }
 }
 
-@keyframes scrollBounce {
-  0%, 100% { transform: rotate(45deg) translateY(0); }
-  50% { transform: rotate(45deg) translateY(6px); }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SECTION 1: THE CRISIS
-   ═══════════════════════════════════════════════════════════ */
-
-#crisis {
+/* ── Crisis Section ── */
+#sec-crisis {
   text-align: center;
 }
 
-.crisis-number {
+.crisis-headline {
   font-family: var(--font-mono);
-  font-size: clamp(64px, 12vw, 120px);
+  font-size: clamp(4rem, 12vw, 8rem);
   font-weight: 700;
   color: var(--red);
   line-height: 1;
   margin-bottom: 8px;
-  text-shadow: 0 0 80px rgba(239,68,68,0.2);
+  text-shadow: 0 0 60px rgba(239,68,68,0.2);
 }
 
 .crisis-label {
-  font-size: clamp(16px, 2.5vw, 22px);
+  font-size: 1.1rem;
   color: var(--text-dim);
-  margin-bottom: 60px;
+  margin-bottom: 48px;
 }
 
 .stats-grid {
@@ -339,64 +365,59 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
 }
 
 .stat-card {
-  padding: 28px 24px;
+  padding: 28px 20px;
   text-align: center;
 }
 
 .stat-value {
   font-family: var(--font-mono);
-  font-size: 36px;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 700;
   color: var(--text);
   margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 0.8rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 1.5px;
 }
 
 .stat-change {
   font-family: var(--font-mono);
-  font-size: 11px;
-  margin-top: 8px;
+  font-size: 0.75rem;
+  margin-top: 6px;
 }
-
-.stat-change.up { color: var(--aurora-1); }
+.stat-change.up { color: var(--success); }
 .stat-change.down { color: var(--red); }
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION 2: THE VISION
-   ═══════════════════════════════════════════════════════════ */
-
-#vision {
+/* ── Vision Section ── */
+#sec-vision {
   text-align: center;
-  min-height: 80vh;
 }
 
 .vision-text {
   font-family: var(--font-display);
-  font-size: clamp(28px, 5vw, 56px);
+  font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 700;
-  line-height: 1.2;
-  max-width: 800px;
+  color: var(--text);
+  max-width: 700px;
   margin: 0 auto;
+  line-height: 1.3;
 }
 
 .vision-text .word {
   display: inline-block;
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(20px);
+  transition: all 0.6s var(--spring);
+  margin-right: 0.3em;
 }
-
 .vision-text .word.visible {
   opacity: 1;
   transform: translateY(0);
 }
-
 .vision-text .highlight {
   background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
   -webkit-background-clip: text;
@@ -404,171 +425,150 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
   background-clip: text;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION 3: HOW IT WORKS
-   ═══════════════════════════════════════════════════════════ */
-
-#how-it-works {
+/* ── How It Works ── */
+#sec-how {
   text-align: center;
 }
 
-.section-title {
+.how-title {
   font-family: var(--font-display);
-  font-size: clamp(12px, 1.5vw, 14px);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--aurora-2);
-  margin-bottom: 12px;
-}
-
-.section-heading {
-  font-family: var(--font-display);
-  font-size: clamp(28px, 4vw, 48px);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
   font-weight: 700;
-  margin-bottom: 16px;
-}
-
-.section-desc {
-  font-size: 16px;
-  color: var(--text-dim);
-  max-width: 600px;
-  margin: 0 auto 60px;
-  line-height: 1.6;
+  margin-bottom: 48px;
+  color: var(--text);
 }
 
 .channels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  max-width: 1000px;
-  margin: 0 auto 48px;
+  max-width: 800px;
+  margin: 0 auto 40px;
 }
 
 .channel-card {
-  padding: 36px 28px;
+  padding: 32px 20px;
   text-align: center;
-  position: relative;
-  overflow: hidden;
 }
 
 .channel-icon {
-  font-size: 48px;
+  font-size: 2.5rem;
   margin-bottom: 16px;
-  display: block;
 }
 
 .channel-name {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 8px;
 }
 
 .channel-desc {
-  font-size: 13px;
+  font-size: 0.85rem;
   color: var(--text-dim);
-  line-height: 1.5;
 }
 
-.pipeline-flow {
+.pipeline-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  flex-wrap: wrap;
-  margin-top: 40px;
-}
-
-.pipeline-step {
-  padding: 12px 24px;
-  border-radius: 999px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-
-.pipeline-arrow {
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: 0.85rem;
+  margin: 24px 0;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION 4: LIVE MAP
-   ═══════════════════════════════════════════════════════════ */
-
-#live-map {
-  padding-top: 60px;
-  padding-bottom: 60px;
+.pipeline-arrow .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--aurora-2);
+  animation: dotPulse 2s ease-in-out infinite;
 }
 
-.map-container {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  aspect-ratio: 1.3;
-  overflow: hidden;
-  border-radius: var(--radius);
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
 }
 
-.map-container svg {
-  width: 100%;
-  height: 100%;
-}
+/* ── Map Section ── */
+#sec-map { padding-top: 40px; }
 
-.map-tooltip {
-  position: absolute;
-  padding: 16px 20px;
-  border-radius: var(--radius-sm);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 100;
-  min-width: 200px;
-  background: rgba(6,9,15,0.92);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass);
-}
-
-.map-tooltip.active { opacity: 1; }
-
-.map-tooltip h4 {
-  font-size: 14px;
+.map-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  text-align: center;
   margin-bottom: 8px;
 }
 
-.map-tooltip .drug-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 0;
-  font-size: 11px;
+.map-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 32px;
 }
 
-.map-tooltip .drug-name { color: var(--text-dim); }
-.map-tooltip .drug-pct { font-family: var(--font-mono); font-weight: 600; }
+.map-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  aspect-ratio: 1.3;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: rgba(6,9,15,0.6);
+}
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION 5: ALERTS
-   ═══════════════════════════════════════════════════════════ */
+.map-container svg { width: 100%; height: 100%; }
 
-#alerts {
-  padding-top: 80px;
-  padding-bottom: 80px;
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10,15,26,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass-hover);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+  z-index: 100;
+  min-width: 180px;
+}
+.map-tooltip.show { opacity: 1; transform: translateY(0); }
+.map-tooltip .tt-district { font-family: var(--font-display); font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.map-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; margin: 3px 0; color: var(--text-dim); }
+.map-tooltip .tt-val { font-family: var(--font-mono); color: var(--text); }
+
+/* ── Alerts Section ── */
+#sec-alerts { text-align: center; }
+
+.alerts-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.alerts-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 40px;
 }
 
 .alerts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px;
-  max-width: 1100px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .alert-card {
-  padding: 20px 24px;
+  padding: 20px;
+  text-align: left;
   position: relative;
   overflow: hidden;
 }
@@ -580,12 +580,12 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
   top: 0;
   bottom: 0;
   width: 3px;
-  border-radius: 0 2px 2px 0;
+  border-radius: 3px 0 0 3px;
 }
 
 .alert-card.critical::before { background: var(--red); box-shadow: 0 0 12px rgba(239,68,68,0.3); }
-.alert-card.high::before { background: var(--amber); box-shadow: 0 0 12px rgba(245,158,11,0.2); }
-.alert-card.medium::before { background: var(--accent); box-shadow: 0 0 12px rgba(0,240,255,0.15); }
+.alert-card.high::before { background: var(--coral); box-shadow: 0 0 12px rgba(249,115,22,0.3); }
+.alert-card.medium::before { background: var(--amber); box-shadow: 0 0 12px rgba(245,158,11,0.3); }
 
 .alert-header {
   display: flex;
@@ -601,25 +601,23 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
   flex-shrink: 0;
   animation: alertPulse 2s ease-in-out infinite;
 }
-
-.critical .alert-dot { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
-.high .alert-dot { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
-.medium .alert-dot { background: var(--accent); box-shadow: 0 0 8px rgba(0,240,255,0.3); }
+.alert-dot.critical { background: var(--red); }
+.alert-dot.high { background: var(--coral); }
+.alert-dot.medium { background: var(--amber); }
 
 @keyframes alertPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.6; }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
 }
 
 .alert-title {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 0.9rem;
   font-weight: 600;
-  flex: 1;
 }
 
-.alert-message {
-  font-size: 12px;
+.alert-msg {
+  font-size: 0.8rem;
   color: var(--text-dim);
   line-height: 1.5;
   margin-bottom: 10px;
@@ -633,48 +631,41 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
 
 .alert-tag {
   font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 3px 10px;
-  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
   background: rgba(255,255,255,0.05);
-  color: var(--text-dim);
-  letter-spacing: 0.03em;
-}
-
-.alert-time {
-  font-family: var(--font-mono);
-  font-size: 10px;
   color: var(--text-muted);
-  margin-left: auto;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION 6: CASES
-   ═══════════════════════════════════════════════════════════ */
+/* ── Cases Section ── */
+#sec-cases { text-align: center; }
 
-#cases {
-  padding-top: 80px;
-  padding-bottom: 80px;
+.cases-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 32px;
 }
 
-.cases-wrapper {
-  max-width: 1100px;
+.cases-table-wrap {
+  max-width: 1000px;
   margin: 0 auto;
   overflow-x: auto;
+  border-radius: var(--radius);
 }
 
 .cases-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8rem;
 }
 
-.cases-table thead th {
+.cases-table th {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-size: 0.7rem;
   text-transform: uppercase;
+  letter-spacing: 1px;
   color: var(--text-muted);
   padding: 12px 16px;
   text-align: left;
@@ -682,122 +673,79 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
   position: sticky;
   top: 0;
   background: var(--bg-deep);
-  z-index: 10;
-}
-
-.cases-table tbody tr {
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  transition: background 0.2s ease;
-}
-
-.cases-table tbody tr:hover {
-  background: rgba(255,255,255,0.02);
 }
 
 .cases-table td {
-  padding: 14px 16px;
-  vertical-align: middle;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-dim);
+  text-align: left;
 }
+
+.cases-table tr { transition: background 0.2s; }
+.cases-table tr:hover { background: rgba(255,255,255,0.03); }
 
 .case-id {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 0.75rem;
+  color: var(--accent);
 }
 
 .source-badge {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 999px;
-  letter-spacing: 0.03em;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-
-.source-badge.telegram { background: rgba(0,136,204,0.15); color: #0088CC; }
-.source-badge.whatsapp { background: rgba(37,211,102,0.12); color: #25D366; }
-.source-badge.ussd { background: rgba(245,158,11,0.12); color: var(--amber); }
-.source-badge.sms { background: rgba(167,139,250,0.12); color: var(--aurora-3); }
-.source-badge.manual { background: rgba(255,255,255,0.05); color: var(--text-dim); }
-
-.severity-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
+.source-badge.telegram { background: rgba(0,136,204,0.15); color: #0088cc; }
+.source-badge.whatsapp { background: rgba(37,211,102,0.15); color: #25d366; }
+.source-badge.ussd { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.source-badge.sms { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.source-badge.manual { background: rgba(255,255,255,0.05); color: var(--text-muted); }
 
 .severity-dot {
+  display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
-.severity-dot.critical { background: var(--red); }
-.severity-dot.severe { background: #F97316; }
-.severity-dot.moderate { background: var(--amber); }
-.severity-dot.mild { background: var(--accent); }
+/* ── Resistance Section ── */
+#sec-resistance { text-align: center; }
 
-.district-tag {
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.complaint-text {
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-dim);
-  font-size: 12px;
-}
-
-.time-ago {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SECTION 7: RESISTANCE
-   ═══════════════════════════════════════════════════════════ */
-
-#resistance {
-  padding-top: 80px;
-  padding-bottom: 80px;
+.resistance-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 32px;
 }
 
 .resistance-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 40px;
-  max-width: 1100px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-@media (max-width: 768px) {
-  .resistance-grid { grid-template-columns: 1fr; }
-}
+.drug-bars { display: flex; flex-direction: column; gap: 10px; }
 
-.resistance-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.drug-bar-row {
+.drug-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
 .drug-name {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.8rem;
   color: var(--text-dim);
-  min-width: 110px;
+  width: 110px;
   text-align: right;
+  flex-shrink: 0;
 }
 
 .drug-bar-track {
@@ -811,53 +759,46 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
 .drug-bar-fill {
   height: 100%;
   border-radius: 4px;
-  width: 0%;
-  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 0;
+  transition: width 1.2s var(--spring);
 }
 
 .drug-pct {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 40px;
+  font-size: 0.75rem;
+  width: 40px;
+  text-align: left;
 }
 
-.chart-wrapper {
-  padding: 24px;
-  position: relative;
+.chart-wrap {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  padding: 20px;
 }
 
-.chart-wrapper canvas {
-  width: 100% !important;
-  height: 280px !important;
-}
+.chart-wrap canvas { width: 100% !important; height: 280px !important; }
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION 8: CLOSE
-   ═══════════════════════════════════════════════════════════ */
-
-#close {
+/* ── Close Section ── */
+#sec-close {
   text-align: center;
   min-height: 60vh;
 }
 
-.close-heading {
+.close-text {
   font-family: var(--font-display);
-  font-size: clamp(28px, 5vw, 52px);
+  font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 700;
-  line-height: 1.2;
   margin-bottom: 24px;
   background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2), var(--aurora-3));
-  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradientShift 8s ease-in-out infinite;
 }
 
 .close-sub {
-  font-size: 16px;
   color: var(--text-dim);
+  font-size: 0.95rem;
   margin-bottom: 40px;
 }
 
@@ -870,772 +811,786 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
 
 .close-link {
   font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 10px 24px;
-  border-radius: 999px;
-  background: var(--bg-glass);
-  border: 1px solid var(--border-glass);
-  color: var(--text-dim);
+  font-size: 0.8rem;
+  color: var(--accent);
   text-decoration: none;
-  transition: all 0.3s ease;
-  letter-spacing: 0.05em;
+  padding: 8px 20px;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s var(--spring-soft);
 }
-
 .close-link:hover {
-  border-color: var(--aurora-2);
-  color: var(--aurora-2);
-  box-shadow: 0 0 20px rgba(45,212,191,0.1);
+  border-color: var(--accent);
+  background: rgba(0,240,255,0.05);
 }
 
-.footer {
-  margin-top: 80px;
-  padding: 24px;
-  text-align: center;
-  font-size: 11px;
+.close-footer {
+  margin-top: 60px;
+  font-size: 0.7rem;
   color: var(--text-muted);
-  border-top: 1px solid var(--border-glass);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   THE LIVING ORB
-   ═══════════════════════════════════════════════════════════ */
-
-#orb {
+/* ── Orb Quick Insights Panel ── */
+#orb-panel {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  z-index: 9999;
-  cursor: pointer;
-  animation: orbBreathe 4s ease-in-out infinite;
-  background: radial-gradient(circle at 35% 35%, var(--aurora-1), var(--aurora-2), var(--aurora-3));
-  box-shadow: 0 0 30px rgba(45,212,191,0.2), 0 0 60px rgba(74,222,128,0.1);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
-}
-
-#orb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 40px rgba(45,212,191,0.3), 0 0 80px rgba(74,222,128,0.15);
-}
-
-#orb::after {
-  content: 'STAI';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: var(--font-display);
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  letter-spacing: 0.1em;
+  bottom: 100px;
+  right: 24px;
+  width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(10,15,26,0.95);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass-hover);
+  border-radius: var(--radius);
+  padding: 20px;
+  z-index: 9998;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+  transition: all 0.4s var(--spring);
+}
+#orb-panel.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
 }
 
-#orb:hover::after { opacity: 1; }
-
-@keyframes orbBreathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+.orb-panel-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
 }
 
-#orb.alert-mode {
-  background: radial-gradient(circle at 35% 35%, var(--amber), var(--red));
-  box-shadow: 0 0 30px rgba(239,68,68,0.3);
-  animation: orbAlert 1s ease-in-out infinite;
+.orb-panel-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.8rem;
+}
+.orb-panel-stat:last-child { border-bottom: none; }
+.orb-panel-stat .label { color: var(--text-muted); }
+.orb-panel-stat .val { font-family: var(--font-mono); color: var(--text); }
+
+/* ── Section dividers ── */
+.section + .section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-glass), transparent);
 }
 
-@keyframes orbAlert {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+/* ── Selection color ── */
+::selection {
+  background: rgba(45,212,191,0.3);
+  color: var(--text);
 }
 
-#orb.critical-flash {
-  animation: orbCritical 0.5s ease-out;
-}
-
-@keyframes orbCritical {
-  0% { transform: scale(1.3); box-shadow: 0 0 60px rgba(239,68,68,0.5); }
-  100% { transform: scale(1); box-shadow: 0 0 30px rgba(45,212,191,0.2); }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════════════════ */
-
+/* ── Mobile adjustments ── */
 @media (max-width: 768px) {
-  .section { padding: 60px 16px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .channels-grid { grid-template-columns: 1fr; }
-  .alerts-grid { grid-template-columns: 1fr; }
-  .cases-table .hide-mobile { display: none; }
-  .pipeline-flow { flex-direction: column; }
   #orb { width: 48px; height: 48px; bottom: 16px; right: 16px; }
+  .orb-label { font-size: 8px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .alerts-grid { grid-template-columns: 1fr; }
+  .cases-table th:nth-child(3),
+  .cases-table td:nth-child(3) { display: none; }
+  #orb-panel { right: 16px; bottom: 80px; width: calc(100vw - 32px); }
+  .channels-grid { grid-template-columns: 1fr; max-width: 320px; }
+  .resistance-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Reduced motion ── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  .reveal, .reveal-left, .reveal-right, .reveal-scale {
-    opacity: 1;
-    transform: none;
-  }
-  .vision-text .word { opacity: 1; transform: none; }
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .channels-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
+
 <body>
 
-<!-- Aurora mesh background -->
-<div class="aurora-mesh" aria-hidden="true">
-  <div class="aurora-blob"></div>
-  <div class="aurora-blob"></div>
-  <div class="aurora-blob"></div>
+<!-- Aurora Mesh Background -->
+<div class="aurora-mesh" id="aurora-mesh"></div>
+
+<!-- Living Orb -->
+<div id="orb" aria-label="STAI Assistant Orb" role="img">
+  <div class="orb-inner"></div>
+  <span class="orb-label">STAI</span>
 </div>
 
-<!-- ═══ SECTION 0: HERO ═══ -->
-<section id="hero" class="section" data-orb-mode="default">
-  <canvas id="hero-canvas" aria-hidden="true"></canvas>
-  <div class="hero-content">
-    <div class="hero-logo reveal">STAI</div>
-    <div class="hero-subtitle reveal delay-1">Sentri Intelligence</div>
-    <p class="hero-tagline reveal delay-2">Real-time antimicrobial resistance surveillance across Africa. Report via Telegram, WhatsApp, and SMS.</p>
-  </div>
-  <div class="scroll-indicator" aria-hidden="true">
-    <span>Scroll</span>
-    <div class="scroll-arrow"></div>
+<!-- Orb Quick Insights Panel -->
+<div id="orb-panel">
+  <div class="orb-panel-title">Quick Insights</div>
+  <div id="orb-panel-body"></div>
+</div>
+
+<!-- Sections -->
+<section class="section" id="sec-hero" data-section="hero">
+  <div class="section-inner" id="hero-content"></div>
+  <div class="scroll-indicator" id="scroll-indicator">
+    <span>Scroll to explore</span>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12l7 7 7-7"/>
+    </svg>
   </div>
 </section>
 
-<!-- ═══ SECTION 1: THE CRISIS ═══ -->
-<section id="crisis" class="section" data-orb-mode="alert">
-  <div class="section-inner">
-    <div class="crisis-number reveal mono" data-count="1270000" data-suffix="">0</div>
-    <div class="crisis-label reveal delay-1">deaths per year from drug-resistant infections</div>
-    <div class="stats-grid">
-      <div class="stat-card glass reveal delay-2">
-        <div class="stat-value mono" data-count="250">0</div>
-        <div class="stat-label">Cases Reported</div>
-        <div class="stat-change up">&#8593; 12.5%</div>
-      </div>
-      <div class="stat-card glass reveal delay-3">
-        <div class="stat-value mono" data-count="15">0</div>
-        <div class="stat-label">Districts Covered</div>
-      </div>
-      <div class="stat-card glass reveal delay-4">
-        <div class="stat-value mono" data-count="12">0</div>
-        <div class="stat-label">Drugs Tracked</div>
-      </div>
-      <div class="stat-card glass reveal delay-5">
-        <div class="stat-value mono" data-count="10">0</div>
-        <div class="stat-label">Active Alerts</div>
-        <div class="stat-change down">&#8595; 8.3%</div>
-      </div>
-    </div>
-  </div>
+<section class="section" id="sec-crisis" data-section="crisis">
+  <div class="section-inner" id="crisis-content"></div>
 </section>
 
-<!-- ═══ SECTION 2: THE VISION ═══ -->
-<section id="vision" class="section" data-orb-mode="bright">
-  <div class="section-inner">
-    <div class="vision-text" id="vision-text">
-      <span class="word">STAI</span>
-      <span class="word">sees</span>
-      <span class="word highlight">resistance</span>
-      <span class="word">before</span>
-      <span class="word">it</span>
-      <span class="word highlight">spreads.</span>
-    </div>
-  </div>
+<section class="section" id="sec-vision" data-section="vision">
+  <div class="section-inner" id="vision-content"></div>
 </section>
 
-<!-- ═══ SECTION 3: HOW IT WORKS ═══ -->
-<section id="how-it-works" class="section" data-orb-mode="default">
-  <div class="section-inner">
-    <div class="section-title reveal">How It Works</div>
-    <h2 class="section-heading reveal delay-1">Three Channels. One Intelligence.</h2>
-    <p class="section-desc reveal delay-2">Community health workers report cases through the tools they already use. STAI processes every report into structured surveillance data.</p>
-    <div class="channels-grid">
-      <div class="channel-card glass reveal delay-3">
-        <span class="channel-icon">&#9993;</span>
-        <div class="channel-name">Telegram</div>
-        <div class="channel-desc">Bot-guided case reporting with symptom checklists and geolocation tagging.</div>
-      </div>
-      <div class="channel-card glass reveal delay-4">
-        <span class="channel-icon">&#128172;</span>
-        <div class="channel-name">WhatsApp</div>
-        <div class="channel-desc">Meta Business API integration for conversational case submission and alerts.</div>
-      </div>
-      <div class="channel-card glass reveal delay-5">
-        <span class="channel-icon">&#128241;</span>
-        <div class="channel-name">SMS / USSD</div>
-        <div class="channel-desc">Works on any phone. Structured codes for rapid field reporting without internet.</div>
-      </div>
-    </div>
-    <div class="pipeline-flow reveal delay-6">
-      <div class="pipeline-step glass">Field Report</div>
-      <span class="pipeline-arrow">&#8594;</span>
-      <div class="pipeline-step glass">STAI Processes</div>
-      <span class="pipeline-arrow">&#8594;</span>
-      <div class="pipeline-step glass" style="border-color: rgba(45,212,191,0.2);">Structured Data</div>
-      <span class="pipeline-arrow">&#8594;</span>
-      <div class="pipeline-step glass" style="border-color: rgba(74,222,128,0.2);">Dashboard</div>
-    </div>
-  </div>
+<section class="section" id="sec-how" data-section="how">
+  <div class="section-inner" id="how-content"></div>
 </section>
 
-<!-- ═══ SECTION 4: LIVE MAP ═══ -->
-<section id="live-map" class="section" data-orb-mode="map">
-  <div class="section-inner">
-    <div class="section-title reveal">Live Surveillance</div>
-    <h2 class="section-heading reveal delay-1">Africa Under Watch</h2>
-    <p class="section-desc reveal delay-2">15 districts. Real-time resistance data. Every dot tells a story.</p>
-    <div class="map-container glass reveal-scale delay-3" id="map-container">
-      <div class="map-tooltip" id="map-tooltip"></div>
-    </div>
-  </div>
+<section class="section" id="sec-map" data-section="map">
+  <div class="section-inner" id="map-content"></div>
 </section>
 
-<!-- ═══ SECTION 5: ALERTS ═══ -->
-<section id="alerts" class="section" data-orb-mode="alert">
-  <div class="section-inner">
-    <div class="section-title reveal">Active Threats</div>
-    <h2 class="section-heading reveal delay-1">Alerts</h2>
-    <p class="section-desc reveal delay-2">Critical resistance events detected across the network.</p>
-    <div class="alerts-grid" id="alerts-grid"></div>
-  </div>
+<section class="section" id="sec-alerts" data-section="alerts">
+  <div class="section-inner" id="alerts-content"></div>
 </section>
 
-<!-- ═══ SECTION 6: CASES ═══ -->
-<section id="cases" class="section" data-orb-mode="default">
-  <div class="section-inner">
-    <div class="section-title reveal">Field Reports</div>
-    <h2 class="section-heading reveal delay-1">Cases</h2>
-    <div class="cases-wrapper glass reveal delay-2" style="padding: 0; overflow: hidden;">
-      <table class="cases-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Source</th>
-            <th>Complaint</th>
-            <th class="hide-mobile">District</th>
-            <th class="hide-mobile">Severity</th>
-            <th class="hide-mobile">Patient</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody id="cases-body"></tbody>
-      </table>
-    </div>
-  </div>
+<section class="section" id="sec-cases" data-section="cases">
+  <div class="section-inner" id="cases-content"></div>
 </section>
 
-<!-- ═══ SECTION 7: RESISTANCE ═══ -->
-<section id="resistance" class="section" data-orb-mode="default">
-  <div class="section-inner">
-    <div class="section-title reveal">The Drug War</div>
-    <h2 class="section-heading reveal delay-1">Resistance Patterns</h2>
-    <p class="section-desc reveal delay-2">Drug resistance percentages across all monitored districts.</p>
-    <div class="resistance-grid">
-      <div class="resistance-bars reveal delay-3" id="resistance-bars"></div>
-      <div class="chart-wrapper glass reveal delay-4">
-        <canvas id="trend-chart"></canvas>
-      </div>
-    </div>
-  </div>
+<section class="section" id="sec-resistance" data-section="resistance">
+  <div class="section-inner" id="resistance-content"></div>
 </section>
 
-<!-- ═══ SECTION 8: CLOSE ═══ -->
-<section id="close" class="section" data-orb-mode="fade">
-  <div class="section-inner">
-    <h2 class="close-heading reveal">Built for Africa.<br>Built for the World.</h2>
-    <p class="close-sub reveal delay-1">Sentri Intelligence &mdash; AMR surveillance that works where it matters most.</p>
-    <div class="close-links reveal delay-2">
-      <a href="https://github.com/teaminnovatorx" class="close-link" target="_blank">GitHub</a>
-      <a href="#hero" class="close-link">Back to Top</a>
-    </div>
-    <div class="footer">
-      <p>STAI &mdash; Sentri Intelligence &copy; 2026. Open-source AMR surveillance.</p>
-    </div>
-  </div>
+<section class="section" id="sec-close" data-section="close">
+  <div class="section-inner" id="close-content"></div>
 </section>
-
-<!-- ═══ THE LIVING ORB ═══ -->
-<div id="orb" role="button" aria-label="STAI companion orb" tabindex="0"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   STAI — JavaScript Engine
-   ═══════════════════════════════════════════════════════════ */
+// ═══════════════════════════════════════════════
+//  STAI — Demo Data (GitHub Pages fallback)
+// ═══════════════════════════════════════════════
 
-// ── Demo Data ──
 const DISTRICT_COORDS = {
-  "Lagos": [3.3792, 6.5244], "Accra": [-0.187, 5.6037], "Kumasi": [-1.6244, 6.6885],
-  "Abuja": [7.3986, 9.0765], "Dakar": [-17.4677, 14.7167], "Nairobi": [36.8219, -1.2921],
-  "Dar es Salaam": [39.2083, -6.7924], "Kampala": [32.5825, 0.3476], "Addis Ababa": [38.7469, 9.032],
-  "Mombasa": [39.6682, -4.0435], "Lusaka": [28.3228, -15.3875], "Harare": [31.0335, -17.8252],
-  "Lilongwe": [33.7741, -13.9626], "Johannesburg": [28.0473, -26.2041], "Kinshasa": [15.2663, -4.4419]
+  Lagos: [3.3792, 6.5244], Accra: [-0.187, 5.6037], Kumasi: [-1.6244, 6.6885],
+  Abuja: [7.3986, 9.0765], Dakar: [-17.4677, 14.7167], Nairobi: [36.8219, -1.2921],
+  'Dar es Salaam': [39.2083, -6.7924], Kampala: [32.5825, 0.3476],
+  'Addis Ababa': [38.7469, 9.032], Mombasa: [39.6682, -4.0435],
+  Lusaka: [28.3228, -15.3875], Harare: [31.0335, -17.8252],
+  Lilongwe: [33.7741, -13.9626], Johannesburg: [28.0473, -26.2041],
+  Kinshasa: [15.2663, -4.4419],
 };
 
-const DISTRICTS = [
-  { district: 'Lagos', region: 'West Africa', avg_resistance_pct: 52.3, top_drug: 'Amoxicillin', top_resistance: 72, active_alerts: 2, drugs: [{drug:'Amoxicillin',resistance_pct:72},{drug:'Ciprofloxacin',resistance_pct:67},{drug:'Penicillin',resistance_pct:65},{drug:'Erythromycin',resistance_pct:48}] },
-  { district: 'Accra', region: 'West Africa', avg_resistance_pct: 45.1, top_drug: 'Penicillin', top_resistance: 78, active_alerts: 1, drugs: [{drug:'Penicillin',resistance_pct:78},{drug:'Amoxicillin',resistance_pct:62},{drug:'Erythromycin',resistance_pct:41}] },
-  { district: 'Nairobi', region: 'East Africa', avg_resistance_pct: 38.7, top_drug: 'Ceftriaxone', top_resistance: 52, active_alerts: 1, drugs: [{drug:'Ceftriaxone',resistance_pct:52},{drug:'Ciprofloxacin',resistance_pct:35},{drug:'Gentamicin',resistance_pct:28}] },
-  { district: 'Kampala', region: 'East Africa', avg_resistance_pct: 34.2, top_drug: 'Azithromycin', top_resistance: 44, active_alerts: 1, drugs: [{drug:'Azithromycin',resistance_pct:44},{drug:'Penicillin',resistance_pct:38},{drug:'Doxycycline',resistance_pct:22}] },
-  { district: 'Kinshasa', region: 'Central Africa', avg_resistance_pct: 41.8, top_drug: 'Meropenem', top_resistance: 72, active_alerts: 1, drugs: [{drug:'Meropenem',resistance_pct:72},{drug:'Ceftriaxone',resistance_pct:45},{drug:'Gentamicin',resistance_pct:38}] },
-  { district: 'Johannesburg', region: 'Southern Africa', avg_resistance_pct: 36.5, top_drug: 'Gentamicin', top_resistance: 48, active_alerts: 1, drugs: [{drug:'Gentamicin',resistance_pct:48},{drug:'Ciprofloxacin',resistance_pct:32},{drug:'Ceftriaxone',resistance_pct:25}] },
-  { district: 'Dar es Salaam', region: 'East Africa', avg_resistance_pct: 29.4, top_drug: 'Amoxicillin', top_resistance: 55, active_alerts: 0, drugs: [{drug:'Amoxicillin',resistance_pct:55},{drug:'Penicillin',resistance_pct:42},{drug:'Erythromycin',resistance_pct:28}] },
-  { district: 'Addis Ababa', region: 'East Africa', avg_resistance_pct: 31.6, top_drug: 'Ciprofloxacin', top_resistance: 38, active_alerts: 1, drugs: [{drug:'Ciprofloxacin',resistance_pct:38},{drug:'Amoxicillin',resistance_pct:45},{drug:'Penicillin',resistance_pct:30}] },
-  { district: 'Mombasa', region: 'East Africa', avg_resistance_pct: 33.1, top_drug: 'Ceftriaxone', top_resistance: 41, active_alerts: 1, drugs: [{drug:'Ceftriaxone',resistance_pct:41},{drug:'Amoxicillin',resistance_pct:48},{drug:'Doxycycline',resistance_pct:18}] },
-  { district: 'Lusaka', region: 'Southern Africa', avg_resistance_pct: 27.8, top_drug: 'Penicillin', top_resistance: 45, active_alerts: 0, drugs: [{drug:'Penicillin',resistance_pct:45},{drug:'Erythromycin',resistance_pct:32},{drug:'Amoxicillin',resistance_pct:38}] },
-  { district: 'Harare', region: 'Southern Africa', avg_resistance_pct: 25.3, top_drug: 'Erythromycin', top_resistance: 40, active_alerts: 0, drugs: [{drug:'Erythromycin',resistance_pct:40},{drug:'Penicillin',resistance_pct:35},{drug:'Amoxicillin',resistance_pct:30}] },
-  { district: 'Lilongwe', region: 'Southern Africa', avg_resistance_pct: 30.2, top_drug: 'Penicillin', top_resistance: 35, active_alerts: 1, drugs: [{drug:'Penicillin',resistance_pct:35},{drug:'Amoxicillin',resistance_pct:42},{drug:'Ciprofloxacin',resistance_pct:20}] },
-  { district: 'Kumasi', region: 'West Africa', avg_resistance_pct: 39.7, top_drug: 'Amoxicillin', top_resistance: 60, active_alerts: 0, drugs: [{drug:'Amoxicillin',resistance_pct:60},{drug:'Penicillin',resistance_pct:52},{drug:'Ciprofloxacin',resistance_pct:28}] },
-  { district: 'Abuja', region: 'West Africa', avg_resistance_pct: 35.4, top_drug: 'Clindamycin', top_resistance: 33, active_alerts: 1, drugs: [{drug:'Clindamycin',resistance_pct:33},{drug:'Amoxicillin',resistance_pct:50},{drug:'Penicillin',resistance_pct:42}] },
-  { district: 'Dakar', region: 'West Africa', avg_resistance_pct: 28.9, top_drug: 'Amoxicillin', top_resistance: 48, active_alerts: 0, drugs: [{drug:'Amoxicillin',resistance_pct:48},{drug:'Penicillin',resistance_pct:40},{drug:'Ciprofloxacin',resistance_pct:18}] }
-];
-
-const ARC_PAIRS = [
-  ['Lagos','Accra'],['Nairobi','Mombasa'],['Kampala','Nairobi'],
-  ['Johannesburg','Lusaka'],['Kinshasa','Lagos'],['Addis Ababa','Nairobi'],
-  ['Accra','Kumasi'],['Dar es Salaam','Mombasa'],['Harare','Lusaka'],
-  ['Abuja','Lagos'],['Dakar','Accra'],['Lilongwe','Lusaka']
-];
-
-const ALERTS = [
-  { severity:'critical', title:'Ciprofloxacin-Resistant E. coli Outbreak', message:'Lagos Island: 67% of E. coli isolates resistant to ciprofloxacin. Cluster linked to contaminated water source.', district:'Lagos', drug:'Ciprofloxacin', time:'4h ago' },
-  { severity:'critical', title:'Carbapenem Resistance Emerging', message:'Cliniques Universitaires: K. pneumoniae resistant to meropenem. Last-resort antibiotics compromised.', district:'Kinshasa', drug:'Meropenem', time:'8h ago' },
-  { severity:'critical', title:'MRSA-like Penicillin Resistance in Accra', message:'Korle Bu: 78% S. aureus resistant to penicillin. Wound infection cluster in surgical ward.', district:'Accra', drug:'Penicillin', time:'12h ago' },
-  { severity:'high', title:'ESBL-Producing K. pneumoniae Cluster', message:'Kenyatta National Hospital: 5 MDR K. pneumoniae cases in ICU. Resistance to 3rd-gen cephalosporins confirmed.', district:'Nairobi', drug:'Ceftriaxone', time:'18h ago' },
-  { severity:'high', title:'Azithromycin-Resistant Gonorrhea Surge', message:'Mulago region: 44% of N. gonorrhoeae isolates resistant. STI clinic reporting treatment failures.', district:'Kampala', drug:'Azithromycin', time:'1d ago' },
-  { severity:'high', title:'MDR Pseudomonas in ICU', message:'Chris Hani Baragwanath ICU: Multi-drug resistant P. aeruginosa. Limited treatment options remain.', district:'Johannesburg', drug:'Gentamicin', time:'1.5d ago' },
-  { severity:'medium', title:'ESBL E. coli in Coastal Kenya', message:'Coastal General: ESBL-producing E. coli in pediatric UTI cases. Linked to poultry antibiotic use.', district:'Mombasa', drug:'Ceftriaxone', time:'2d ago' },
-  { severity:'medium', title:'Ciprofloxacin-Resistant Typhoid', message:'Black Lion Hospital: Ciprofloxacin resistance in S. typhi rising. Azithromycin alternative showing efficacy.', district:'Addis Ababa', drug:'Ciprofloxacin', time:'3d ago' },
-  { severity:'medium', title:'Penicillin-Resistant Pneumococcal Meningitis', message:'Kamuzu Central: Penicillin MICs rising in S. pneumoniae meningitis. Switch to ceftriaxone protocol.', district:'Lilongwe', drug:'Penicillin', time:'3d ago' },
-  { severity:'medium', title:'Clindamycin Resistance in SSTIs', message:'National Hospital: 33% S. aureus from skin infections resistant to clindamycin. Inducible resistance mechanism.', district:'Abuja', drug:'Clindamycin', time:'4d ago' }
-];
-
-const CASES = [
-  { id:'a1b2c3', source:'telegram', complaint:'Fever with chills for 5 days, no response to amoxicillin', district:'Lagos', severity:'severe', age:34, sex:'male', time:'2h ago' },
-  { id:'e5f6g7', source:'whatsapp', complaint:'Productive cough with yellow sputum, chest pain on deep breathing', district:'Nairobi', severity:'moderate', age:28, sex:'female', time:'5h ago' },
-  { id:'i9j0k1', source:'telegram', complaint:'Burning urination, frequency, suprapubic pain for 3 days', district:'Accra', severity:'mild', age:45, sex:'female', time:'8h ago' },
-  { id:'m3n4o5', source:'ussd', complaint:'Infected surgical wound with purulent discharge, erythema spreading', district:'Kampala', severity:'critical', age:62, sex:'male', time:'12h ago' },
-  { id:'q7r8s9', source:'whatsapp', complaint:'Persistent watery diarrhea with dehydration signs, 4 days', district:'Kinshasa', severity:'moderate', age:8, sex:'male', time:'16h ago' },
-  { id:'u1v2w3', source:'telegram', complaint:'Severe headache, neck stiffness, photophobia, fever 39.5C', district:'Lagos', severity:'critical', age:19, sex:'female', time:'20h ago' },
-  { id:'y5z6a7', source:'manual', complaint:'Joint pain with swelling, heat, limited range of motion — right knee', district:'Johannesburg', severity:'moderate', age:55, sex:'male', time:'1d ago' },
-  { id:'c9d0e1', source:'sms', complaint:'Non-healing ulcer on foot, surrounding cellulitis, diabetic patient', district:'Dar es Salaam', severity:'severe', age:71, sex:'female', time:'1.3d ago' },
-  { id:'g3h4i5', source:'telegram', complaint:'High fever with rash, myalgia, severe fatigue — 3 days', district:'Addis Ababa', severity:'moderate', age:25, sex:'male', time:'1.5d ago' },
-  { id:'k7l8m9', source:'whatsapp', complaint:'Dysuria with cloudy urine, foul odor, previous UTI history', district:'Mombasa', severity:'mild', age:38, sex:'female', time:'1.8d ago' },
-  { id:'o1p2q3', source:'ussd', complaint:'Chest congestion, wheezing, green sputum, SOB on exertion', district:'Lusaka', severity:'moderate', age:50, sex:'male', time:'2d ago' },
-  { id:'s5t6u7', source:'telegram', complaint:'Purulent conjunctivitis, eye discharge, crusting on eyelids', district:'Kumasi', severity:'mild', age:4, sex:'female', time:'2.3d ago' }
-];
-
-const DRUG_RESISTANCE = [
-  { drug:'Penicillin', pct:58 }, { drug:'Amoxicillin', pct:54 }, { drug:'Erythromycin', pct:42 },
-  { drug:'Ciprofloxacin', pct:38 }, { drug:'Ceftriaxone', pct:35 }, { drug:'Azithromycin', pct:32 },
-  { drug:'Clindamycin', pct:28 }, { drug:'Gentamicin', pct:25 }, { drug:'Doxycycline', pct:20 },
-  { drug:'Levofloxacin', pct:18 }, { drug:'Vancomycin', pct:12 }, { drug:'Meropenem', pct:10 }
-];
-
-const TREND_DATES = Array.from({length:30}, (_,i) => { const d=new Date(); d.setDate(d.getDate()-29+i); return d.toISOString().slice(0,10); });
-const TREND_SERIES = {
-  'Amoxicillin — Lagos': TREND_DATES.map((_,i) => +(68 + (i-15)*0.6 + Math.sin(i)*2).toFixed(1)),
-  'Ciprofloxacin — Lagos': TREND_DATES.map((_,i) => +(62 + (i-15)*0.5 + Math.cos(i)*1.8).toFixed(1)),
-  'Ceftriaxone — Nairobi': TREND_DATES.map((_,i) => +(48 + (i-15)*0.4 + Math.sin(i+1)*1.5).toFixed(1)),
-  'Penicillin — Accra': TREND_DATES.map((_,i) => +(74 + (i-15)*0.3 + Math.cos(i+2)*2.2).toFixed(1)),
-  'Meropenem — Kinshasa': TREND_DATES.map((_,i) => +(65 + (i-15)*0.7 + Math.sin(i-1)*1.9).toFixed(1)),
-  'Gentamicin — Johannesburg': TREND_DATES.map((_,i) => +(44 + (i-15)*0.4 + Math.cos(i+3)*1.6).toFixed(1))
+const DEMO = {
+  stats: { total_cases: 250, total_cases_change: 12.5, active_alerts: 10, active_alerts_change: -8.3, avg_resistance_pct: 38.4, avg_resistance_change: 3.2, active_chws: 45, cases_this_week: 47, districts_covered: 15 },
+  map: [
+    { district: 'Lagos', region: 'West Africa', avg_resistance_pct: 52.3, top_drug: 'Amoxicillin', top_resistance: 72, active_alerts: 2, drugs: [{ drug: 'Amoxicillin', pct: 72 }, { drug: 'Penicillin', pct: 65 }, { drug: 'Ciprofloxacin', pct: 67 }] },
+    { district: 'Accra', region: 'West Africa', avg_resistance_pct: 45.1, top_drug: 'Penicillin', top_resistance: 78, active_alerts: 1, drugs: [{ drug: 'Penicillin', pct: 78 }, { drug: 'Amoxicillin', pct: 62 }] },
+    { district: 'Nairobi', region: 'East Africa', avg_resistance_pct: 38.7, top_drug: 'Ceftriaxone', top_resistance: 52, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', pct: 52 }, { drug: 'Ciprofloxacin', pct: 35 }] },
+    { district: 'Kampala', region: 'East Africa', avg_resistance_pct: 34.2, top_drug: 'Azithromycin', top_resistance: 44, active_alerts: 1, drugs: [{ drug: 'Azithromycin', pct: 44 }, { drug: 'Penicillin', pct: 38 }] },
+    { district: 'Kinshasa', region: 'Central Africa', avg_resistance_pct: 41.8, top_drug: 'Meropenem', top_resistance: 72, active_alerts: 1, drugs: [{ drug: 'Meropenem', pct: 72 }, { drug: 'Ceftriaxone', pct: 45 }] },
+    { district: 'Johannesburg', region: 'Southern Africa', avg_resistance_pct: 36.5, top_drug: 'Gentamicin', top_resistance: 48, active_alerts: 1, drugs: [{ drug: 'Gentamicin', pct: 48 }, { drug: 'Ciprofloxacin', pct: 32 }] },
+    { district: 'Dar es Salaam', region: 'East Africa', avg_resistance_pct: 29.4, top_drug: 'Amoxicillin', top_resistance: 55, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', pct: 55 }, { drug: 'Penicillin', pct: 42 }] },
+    { district: 'Addis Ababa', region: 'East Africa', avg_resistance_pct: 31.6, top_drug: 'Ciprofloxacin', top_resistance: 38, active_alerts: 1, drugs: [{ drug: 'Ciprofloxacin', pct: 38 }, { drug: 'Amoxicillin', pct: 45 }] },
+    { district: 'Mombasa', region: 'East Africa', avg_resistance_pct: 33.1, top_drug: 'Ceftriaxone', top_resistance: 41, active_alerts: 1, drugs: [{ drug: 'Ceftriaxone', pct: 41 }, { drug: 'Amoxicillin', pct: 48 }] },
+    { district: 'Lusaka', region: 'Southern Africa', avg_resistance_pct: 27.8, top_drug: 'Penicillin', top_resistance: 45, active_alerts: 0, drugs: [{ drug: 'Penicillin', pct: 45 }, { drug: 'Erythromycin', pct: 32 }] },
+    { district: 'Harare', region: 'Southern Africa', avg_resistance_pct: 25.3, top_drug: 'Erythromycin', top_resistance: 40, active_alerts: 0, drugs: [{ drug: 'Erythromycin', pct: 40 }, { drug: 'Penicillin', pct: 35 }] },
+    { district: 'Lilongwe', region: 'Southern Africa', avg_resistance_pct: 30.2, top_drug: 'Penicillin', top_resistance: 35, active_alerts: 1, drugs: [{ drug: 'Penicillin', pct: 35 }, { drug: 'Amoxicillin', pct: 42 }] },
+    { district: 'Kumasi', region: 'West Africa', avg_resistance_pct: 39.7, top_drug: 'Amoxicillin', top_resistance: 60, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', pct: 60 }, { drug: 'Penicillin', pct: 52 }] },
+    { district: 'Abuja', region: 'West Africa', avg_resistance_pct: 35.4, top_drug: 'Clindamycin', top_resistance: 33, active_alerts: 1, drugs: [{ drug: 'Clindamycin', pct: 33 }, { drug: 'Amoxicillin', pct: 50 }] },
+    { district: 'Dakar', region: 'West Africa', avg_resistance_pct: 28.9, top_drug: 'Amoxicillin', top_resistance: 48, active_alerts: 0, drugs: [{ drug: 'Amoxicillin', pct: 48 }, { drug: 'Penicillin', pct: 40 }] },
+  ],
+  alerts: [
+    { severity: 'critical', title: 'Ciprofloxacin-Resistant E. coli Outbreak', message: 'Lagos Island: 67% of E. coli isolates resistant. Cluster linked to contaminated water.', district: 'Lagos', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 14400000).toISOString() },
+    { severity: 'critical', title: 'Carbapenem Resistance Emerging', message: 'Kinshasa: K. pneumoniae resistant to meropenem. Last-resort antibiotics compromised.', district: 'Kinshasa', drug: 'Meropenem', created_at: new Date(Date.now() - 28800000).toISOString() },
+    { severity: 'critical', title: 'MRSA-like Penicillin Resistance', message: 'Accra: 78% S. aureus resistant to penicillin. Wound infection cluster.', district: 'Accra', drug: 'Penicillin', created_at: new Date(Date.now() - 43200000).toISOString() },
+    { severity: 'high', title: 'ESBL K. pneumoniae Cluster', message: 'Nairobi: 5 MDR K. pneumoniae cases in ICU. 3rd-gen cephalosporins failed.', district: 'Nairobi', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 64800000).toISOString() },
+    { severity: 'high', title: 'Azithromycin-Resistant Gonorrhea', message: 'Kampala: 44% N. gonorrhoeae resistant. STI treatment failures reported.', district: 'Kampala', drug: 'Azithromycin', created_at: new Date(Date.now() - 86400000).toISOString() },
+    { severity: 'high', title: 'MDR Pseudomonas in ICU', message: 'Johannesburg: Multi-drug resistant P. aeruginosa. Limited options remain.', district: 'Johannesburg', drug: 'Gentamicin', created_at: new Date(Date.now() - 129600000).toISOString() },
+    { severity: 'medium', title: 'ESBL E. coli in Pediatrics', message: 'Mombasa: ESBL-producing E. coli in pediatric UTI. Linked to poultry antibiotics.', district: 'Mombasa', drug: 'Ceftriaxone', created_at: new Date(Date.now() - 172800000).toISOString() },
+    { severity: 'medium', title: 'Ciprofloxacin-Resistant Typhoid', message: 'Addis Ababa: S. typhi resistance rising. Azithromycin alternative showing efficacy.', district: 'Addis Ababa', drug: 'Ciprofloxacin', created_at: new Date(Date.now() - 259200000).toISOString() },
+  ],
+  cases: [
+    { case_id: 'a1b2c3d4', source: 'telegram', complaint: 'Fever with chills for 5 days, no response to amoxicillin', district: 'Lagos', severity: 'severe', patient_age_years: 34, patient_sex: 'male', created_at: new Date(Date.now() - 7200000).toISOString() },
+    { case_id: 'e5f6g7h8', source: 'whatsapp', complaint: 'Productive cough with yellow sputum, chest pain', district: 'Nairobi', severity: 'moderate', patient_age_years: 28, patient_sex: 'female', created_at: new Date(Date.now() - 18000000).toISOString() },
+    { case_id: 'i9j0k1l2', source: 'telegram', complaint: 'Burning urination, frequency, suprapubic pain for 3 days', district: 'Accra', severity: 'mild', patient_age_years: 45, patient_sex: 'female', created_at: new Date(Date.now() - 28800000).toISOString() },
+    { case_id: 'm3n4o5p6', source: 'ussd', complaint: 'Infected surgical wound with purulent discharge', district: 'Kampala', severity: 'critical', patient_age_years: 62, patient_sex: 'male', created_at: new Date(Date.now() - 43200000).toISOString() },
+    { case_id: 'q7r8s9t0', source: 'whatsapp', complaint: 'Persistent watery diarrhea with dehydration signs', district: 'Kinshasa', severity: 'moderate', patient_age_years: 8, patient_sex: 'male', created_at: new Date(Date.now() - 57600000).toISOString() },
+    { case_id: 'u1v2w3x4', source: 'telegram', complaint: 'Severe headache, neck stiffness, photophobia, fever 39.5C', district: 'Lagos', severity: 'critical', patient_age_years: 19, patient_sex: 'female', created_at: new Date(Date.now() - 72000000).toISOString() },
+    { case_id: 'y5z6a7b8', source: 'manual', complaint: 'Joint pain with swelling, limited ROM — right knee', district: 'Johannesburg', severity: 'moderate', patient_age_years: 55, patient_sex: 'male', created_at: new Date(Date.now() - 86400000).toISOString() },
+    { case_id: 'c9d0e1f2', source: 'sms', complaint: 'Non-healing ulcer on foot, surrounding cellulitis', district: 'Dar es Salaam', severity: 'severe', patient_age_years: 71, patient_sex: 'female', created_at: new Date(Date.now() - 108000000).toISOString() },
+    { case_id: 'g3h4i5j6', source: 'telegram', complaint: 'High fever with rash, myalgia, severe fatigue', district: 'Addis Ababa', severity: 'moderate', patient_age_years: 25, patient_sex: 'male', created_at: new Date(Date.now() - 129600000).toISOString() },
+    { case_id: 'k7l8m9n0', source: 'whatsapp', complaint: 'Dysuria with cloudy urine, foul odor, previous UTI', district: 'Mombasa', severity: 'mild', patient_age_years: 38, patient_sex: 'female', created_at: new Date(Date.now() - 151200000).toISOString() },
+  ],
+  drugs: [
+    { drug: 'Penicillin', pct: 78 }, { drug: 'Amoxicillin', pct: 72 }, { drug: 'Meropenem', pct: 72 },
+    { drug: 'Ciprofloxacin', pct: 67 }, { drug: 'Erythromycin', pct: 40 }, { drug: 'Ceftriaxone', pct: 52 },
+    { drug: 'Azithromycin', pct: 44 }, { drug: 'Gentamicin', pct: 48 }, { drug: 'Doxycycline', pct: 22 },
+    { drug: 'Clindamycin', pct: 33 }, { drug: 'Levofloxacin', pct: 28 }, { drug: 'Vancomycin', pct: 12 },
+  ].sort((a, b) => b.pct - a.pct),
 };
 
-const TREND_COLORS = ['#4ADE80','#2DD4BF','#A78BFA','#F59E0B','#EF4444','#F97316'];
+// Build trend data
+(function() {
+  const dates = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  const combos = { 'Amoxicillin · Lagos': 68, 'Ciprofloxacin · Lagos': 62, 'Ceftriaxone · Nairobi': 48, 'Penicillin · Accra': 74, 'Meropenem · Kinshasa': 65, 'Gentamicin · Johannesburg': 44 };
+  const series = {};
+  Object.entries(combos).forEach(([k, v]) => {
+    series[k] = dates.map((_, i) => +(v + (i - 15) * 0.6 + Math.sin(i) * 2).toFixed(1));
+  });
+  DEMO.trends = { dates, series };
+})();
 
-// ── Helpers ──
-function resColor(pct) {
-  if (pct > 60) return '#EF4444';
-  if (pct > 40) return '#F59E0B';
-  if (pct > 25) return '#00F0FF';
-  return '#4ADE80';
+const API_BASE = window.location.origin;
+
+const api = async (path) => {
+  try {
+    const r = await fetch(API_BASE + path, { signal: AbortSignal.timeout(2000) });
+    if (!r.ok) throw new Error('fail');
+    return r.json();
+  } catch { return null; }
+};
+
+// ═══════════════════════════════════════════════
+//  STAI — Core Utilities
+// ═══════════════════════════════════════════════
+
+const $ = id => document.getElementById(id);
+const $$ = q => document.querySelectorAll(q);
+
+// ── Spring Physics ──
+function spring(t, damping = 0.7) {
+  return 1 - Math.pow(Math.E, -6 * t) * Math.cos(damping * t * 12);
 }
 
-function timeAgo(t) { return t; }
-
-// ── Counter animation ──
-function animateCounter(el, target, suffix = '') {
-  const duration = 2000;
+// ── Animated Counter ──
+function animateCounter(el, target, suffix = '', duration = 2000) {
   const start = performance.now();
-  const isLarge = target > 10000;
+  const isDecimal = target % 1 !== 0;
   function tick(now) {
     const t = Math.min((now - start) / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    const val = Math.round(target * ease);
-    el.textContent = (isLarge ? val.toLocaleString() : val) + suffix;
+    const s = spring(t);
+    const val = target * s;
+    el.textContent = (isDecimal ? val.toFixed(1) : Math.round(val)) + suffix;
     if (t < 1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
 }
 
-// ── Scroll reveal with IntersectionObserver ──
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      // Trigger counters
-      e.target.querySelectorAll('[data-count]').forEach(el => {
-        animateCounter(el, parseInt(el.dataset.count), el.dataset.suffix || '');
+// ── Time Ago ──
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
+// ── Resistance Color ──
+function resColor(pct) {
+  if (pct > 60) return '#EF4444';
+  if (pct > 40) return '#F59E0B';
+  if (pct > 20) return '#00F0FF';
+  return '#4ADE80';
+}
+
+// ── Severity Color ──
+function sevColor(sev) {
+  return { critical: '#EF4444', high: '#F97316', medium: '#F59E0B', low: '#00F0FF' }[sev] || '#F59E0B';
+}
+
+// ── Living Orb ──
+const orb = $('orb');
+let currentSection = 'hero';
+
+function setOrbMood(section) {
+  orb.classList.remove('orb-alert', 'orb-warn');
+  if (section === 'crisis' || section === 'alerts') {
+    orb.classList.add('orb-warn');
+  }
+}
+
+function flashOrb() {
+  orb.classList.add('orb-alert');
+  setTimeout(() => orb.classList.remove('orb-alert'), 1500);
+}
+
+orb.addEventListener('click', () => {
+  const panel = document.getElementById('orb-panel');
+  if (panel) {
+    panel.classList.toggle('open');
+  }
+});
+
+// ── Orb Panel Content ──
+function updateOrbPanel() {
+  const body = $('orb-panel-body');
+  if (!body) return;
+  body.innerHTML = `
+    <div class="orb-panel-stat"><span class="label">Total Cases</span><span class="val">${DEMO.stats.total_cases}</span></div>
+    <div class="orb-panel-stat"><span class="label">Active Alerts</span><span class="val" style="color:var(--red)">${DEMO.stats.active_alerts}</span></div>
+    <div class="orb-panel-stat"><span class="label">Districts</span><span class="val">${DEMO.stats.districts_covered}</span></div>
+    <div class="orb-panel-stat"><span class="label">Avg Resistance</span><span class="val" style="color:var(--amber)">${DEMO.stats.avg_resistance_pct}%</span></div>
+    <div class="orb-panel-stat"><span class="label">This Week</span><span class="val">${DEMO.stats.cases_this_week}</span></div>
+    <div class="orb-panel-stat"><span class="label">CHWs Active</span><span class="val">${DEMO.stats.active_chws}</span></div>
+  `;
+}
+updateOrbPanel();
+
+// ═══════════════════════════════════════════════
+//  Section Renderers
+// ═══════════════════════════════════════════════
+
+// ── Hero Section ──
+function renderHero() {
+  $('hero-content').innerHTML = `
+    <h1 class="hero-logo">STAI</h1>
+    <p class="hero-tagline">Sentri Intelligence</p>
+    <p class="hero-sub">Real-time antimicrobial resistance surveillance across Africa. Report via Telegram, WhatsApp & SMS.</p>
+  `;
+}
+renderHero();
+
+// ── Crisis Section ──
+function renderCrisis() {
+  const stats = [
+    { val: 250, label: 'Cases Reported', change: '+12.5%', dir: 'up' },
+    { val: 15, label: 'Districts Covered', change: '', dir: '' },
+    { val: 12, label: 'Drugs Tracked', change: '', dir: '' },
+    { val: 10, label: 'Active Alerts', change: '-8.3%', dir: 'down' },
+  ];
+
+  $('crisis-content').innerHTML = `
+    <div class="reveal">
+      <div class="crisis-headline mono" id="crisis-counter">0</div>
+      <p class="crisis-label">deaths per year from drug-resistant infections</p>
+    </div>
+    <div class="stats-grid">
+      ${stats.map((s, i) => `
+        <div class="glass stat-card reveal reveal-stagger" style="--delay:${i * 120}ms">
+          <div class="stat-value mono" data-count="${s.val}">0</div>
+          <div class="stat-label">${s.label}</div>
+          ${s.change ? `<div class="stat-change ${s.dir}">${s.dir === 'up' ? '&#8593;' : '&#8595;'} ${s.change}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+renderCrisis();
+
+// ── Vision Section ──
+function renderVision() {
+  const words = 'STAI sees resistance before it spreads.'.split(' ');
+  $('vision-content').innerHTML = `
+    <p class="vision-text">
+      ${words.map((w, i) => {
+        const isHighlight = w === 'resistance' || w === 'spreads.';
+        return `<span class="word ${isHighlight ? 'highlight' : ''}" style="transition-delay:${i * 80}ms">${w}</span>`;
+      }).join('')}
+    </p>
+  `;
+}
+renderVision();
+
+// ── How It Works ──
+function renderHow() {
+  const channels = [
+    { icon: '📱', name: 'Telegram', desc: 'Report cases via bot commands. Structured data collection.' },
+    { icon: '💬', name: 'WhatsApp', desc: 'Meta API integration. Reach millions across Africa.' },
+    { icon: '📟', name: 'SMS / USSD', desc: 'Works on feature phones. Zero data requirement.' },
+  ];
+
+  $('how-content').innerHTML = `
+    <h2 class="how-title reveal">Three Channels. One Intelligence.</h2>
+    <div class="channels-grid">
+      ${channels.map((c, i) => `
+        <div class="glass channel-card reveal reveal-stagger" style="--delay:${i * 150}ms">
+          <div class="channel-icon">${c.icon}</div>
+          <div class="channel-name">${c.name}</div>
+          <div class="channel-desc">${c.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="pipeline-arrow reveal">
+      <span>Field Reports</span>
+      <span class="dot"></span>
+      <span class="dot" style="animation-delay:0.3s"></span>
+      <span class="dot" style="animation-delay:0.6s"></span>
+      <span>STAI Processing</span>
+      <span class="dot" style="animation-delay:0.9s"></span>
+      <span class="dot" style="animation-delay:1.2s"></span>
+      <span class="dot" style="animation-delay:1.5s"></span>
+      <span>Dashboard</span>
+    </div>
+  `;
+}
+renderHow();
+
+// ── Map Section ──
+async function renderMap() {
+  $('map-content').innerHTML = `
+    <h2 class="map-title reveal">Africa Under Watch</h2>
+    <p class="map-subtitle reveal">15 districts. Real-time resistance monitoring.</p>
+    <div class="map-container reveal" id="map-svg-wrap">
+      <div class="map-tooltip" id="map-tooltip"></div>
+    </div>
+  `;
+
+  try {
+    const resp = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+    const world = await resp.json();
+    const africa = topojson.feature(world, world.objects.countries).features.filter(f => {
+      const c = f.id;
+      return c >= 12 && c <= 90 || [12,24,72,108,120,132,140,148,174,178,180,204,231,232,262,266,270,288,324,384,404,426,430,434,450,454,466,478,480,504,508,516,562,566,624,638,646,678,686,694,706,710,716,728,729,732,736,748,768,788,800,834,854,894].includes(parseInt(c));
+    });
+
+    const wrap = $('map-svg-wrap');
+    const width = wrap.clientWidth;
+    const height = wrap.clientHeight;
+
+    const svg = d3.select(wrap).append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    const projection = d3.geoMercator()
+      .center([20, 2])
+      .scale(width / 1.2)
+      .translate([width / 2, height / 2]);
+
+    const path = d3.geoPath().projection(projection);
+
+    // Draw Africa
+    svg.append('g').selectAll('path')
+      .data(africa).enter().append('path')
+      .attr('d', path)
+      .attr('fill', 'rgba(255,255,255,0.03)')
+      .attr('stroke', 'rgba(255,255,255,0.06)')
+      .attr('stroke-width', 0.5);
+
+    // Arc connections
+    const arcPairs = [['Lagos','Accra'],['Nairobi','Mombasa'],['Kampala','Nairobi'],['Johannesburg','Lusaka'],['Kinshasa','Lagos'],['Addis Ababa','Nairobi'],['Accra','Kumasi'],['Dar es Salaam','Mombasa'],['Harare','Lusaka'],['Abuja','Lagos'],['Dakar','Accra'],['Lilongwe','Lusaka']];
+
+    const defs = svg.append('defs');
+    arcPairs.forEach(([a, b], i) => {
+      const ca = DISTRICT_COORDS[a], cb = DISTRICT_COORDS[b];
+      if (!ca || !cb) return;
+      const pa = projection(ca), pb = projection(cb);
+      if (!pa || !pb) return;
+      const grad = defs.append('linearGradient').attr('id', `arc-${i}`)
+        .attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '0%');
+      grad.append('stop').attr('offset', '0%').attr('stop-color', '#4ADE80').attr('stop-opacity', 0.3);
+      grad.append('stop').attr('offset', '100%').attr('stop-color', '#A78BFA').attr('stop-opacity', 0.3);
+
+      const midX = (pa[0] + pb[0]) / 2;
+      const midY = (pa[1] + pb[1]) / 2 - 30;
+      svg.append('path')
+        .attr('d', `M${pa[0]},${pa[1]} Q${midX},${midY} ${pb[0]},${pb[1]}`)
+        .attr('fill', 'none')
+        .attr('stroke', `url(#arc-${i})`)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '4,4')
+        .attr('opacity', 0.4);
+    });
+
+    // District points
+    const tooltip = $('map-tooltip');
+    const mapData = DEMO.map;
+
+    svg.append('g').selectAll('circle')
+      .data(mapData).enter().append('circle')
+      .attr('cx', d => { const c = DISTRICT_COORDS[d.district]; return c ? projection(c)[0] : 0; })
+      .attr('cy', d => { const c = DISTRICT_COORDS[d.district]; return c ? projection(c)[1] : 0; })
+      .attr('r', d => 4 + d.active_alerts * 2)
+      .attr('fill', d => resColor(d.avg_resistance_pct))
+      .attr('fill-opacity', 0.7)
+      .attr('stroke', d => resColor(d.avg_resistance_pct))
+      .attr('stroke-width', 1)
+      .attr('stroke-opacity', 0.3)
+      .style('cursor', 'pointer')
+      .style('filter', d => `drop-shadow(0 0 6px ${resColor(d.avg_resistance_pct)}40)`)
+      .on('mouseenter', function(event, d) {
+        d3.select(this).transition().duration(200).attr('r', 10);
+        const drugs = d.drugs.map(dr => `<div class="tt-row"><span>${dr.drug}</span><span class="tt-val" style="color:${resColor(dr.pct)}">${dr.pct}%</span></div>`).join('');
+        tooltip.innerHTML = `
+          <div class="tt-district">${d.district}</div>
+          <div class="tt-row"><span>Resistance</span><span class="tt-val">${d.avg_resistance_pct}%</span></div>
+          <div class="tt-row"><span>Top Drug</span><span class="tt-val">${d.top_drug}</span></div>
+          <div class="tt-row"><span>Alerts</span><span class="tt-val">${d.active_alerts}</span></div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0">
+          ${drugs}
+        `;
+        tooltip.classList.add('show');
+      })
+      .on('mousemove', function(event) {
+        const rect = wrap.getBoundingClientRect();
+        tooltip.style.left = (event.clientX - rect.left + 12) + 'px';
+        tooltip.style.top = (event.clientY - rect.top - 10) + 'px';
+      })
+      .on('mouseleave', function() {
+        d3.select(this).transition().duration(200).attr('r', d => 4 + d.active_alerts * 2);
+        tooltip.classList.remove('show');
       });
-      // Trigger drug bars
-      if (e.target.id === 'resistance' || e.target.closest('#resistance')) {
-        document.querySelectorAll('.drug-bar-fill').forEach(bar => {
-          bar.style.width = bar.dataset.width;
+
+  } catch (e) {
+    $('map-svg-wrap').innerHTML += '<p style="text-align:center;color:var(--text-muted);padding:40px">Map data unavailable</p>';
+  }
+}
+renderMap();
+
+// ── Alerts Section ──
+function renderAlerts() {
+  $('alerts-content').innerHTML = `
+    <h2 class="alerts-title reveal">Active Threats</h2>
+    <p class="alerts-subtitle reveal">${DEMO.alerts.length} alerts across ${DEMO.stats.districts_covered} districts</p>
+    <div class="alerts-grid">
+      ${DEMO.alerts.map((a, i) => `
+        <div class="glass alert-card ${a.severity} reveal reveal-stagger" style="--delay:${i * 100}ms">
+          <div class="alert-header">
+            <span class="alert-dot ${a.severity}"></span>
+            <span class="alert-title">${a.title}</span>
+          </div>
+          <p class="alert-msg">${a.message}</p>
+          <div class="alert-meta">
+            <span class="alert-tag">${a.district}</span>
+            <span class="alert-tag">${a.drug}</span>
+            <span class="alert-tag">${timeAgo(a.created_at)}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+renderAlerts();
+
+// ── Cases Section ──
+function renderCases() {
+  $('cases-content').innerHTML = `
+    <h2 class="cases-title reveal">Field Reports</h2>
+    <div class="glass cases-table-wrap reveal">
+      <table class="cases-table">
+        <thead><tr>
+          <th>ID</th><th>Source</th><th>Complaint</th>
+          <th>District</th><th>Severity</th><th>Patient</th><th>Time</th>
+        </tr></thead>
+        <tbody>
+          ${DEMO.cases.map((c, i) => `
+            <tr style="opacity:0; animation: caseReveal 0.5s var(--spring) ${i * 50}ms forwards;">
+              <td><span class="case-id">${c.case_id.slice(0, 8)}</span></td>
+              <td><span class="source-badge ${c.source}">${c.source}</span></td>
+              <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.complaint}</td>
+              <td>${c.district}</td>
+              <td><span class="severity-dot" style="background:${sevColor(c.severity)}"></span>${c.severity}</td>
+              <td style="font-family:var(--font-mono);font-size:0.75rem">${c.patient_age_years}y ${c.patient_sex ? c.patient_sex.charAt(0) : '?'}</td>
+              <td style="font-size:0.75rem;color:var(--text-muted)">${timeAgo(c.created_at)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+renderCases();
+
+// ── Resistance Section ──
+function renderResistance() {
+  const drugBars = DEMO.drugs.map((d, i) => `
+    <div class="drug-row reveal reveal-stagger" style="--delay:${i * 60}ms">
+      <span class="drug-name">${d.drug}</span>
+      <div class="drug-bar-track">
+        <div class="drug-bar-fill" data-pct="${d.pct}" style="background: linear-gradient(90deg, ${resColor(d.pct)}80, ${resColor(d.pct)})"></div>
+      </div>
+      <span class="drug-pct" style="color:${resColor(d.pct)}">${d.pct}%</span>
+    </div>
+  `).join('');
+
+  $('resistance-content').innerHTML = `
+    <h2 class="resistance-title reveal">The Drug War</h2>
+    <div class="resistance-grid">
+      <div class="drug-bars">${drugBars}</div>
+      <div class="chart-wrap glass reveal">
+        <canvas id="trend-chart"></canvas>
+      </div>
+    </div>
+  `;
+
+  // Animate bars on reveal
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.drug-bar-fill').forEach(bar => {
+          bar.style.width = bar.dataset.pct + '%';
         });
+        barObserver.unobserve(entry.target);
       }
+    });
+  }, { threshold: 0.2 });
+  barObserver.observe($('sec-resistance'));
+
+  // Chart.js trend
+  const ctx = document.getElementById('trend-chart');
+  if (ctx && DEMO.trends) {
+    const colors = ['#4ADE80', '#2DD4BF', '#A78BFA', '#F59E0B', '#EF4444', '#00F0FF'];
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: DEMO.trends.dates.map(d => d.slice(5)),
+        datasets: Object.entries(DEMO.trends.series).map(([name, data], i) => ({
+          label: name,
+          data,
+          borderColor: colors[i % colors.length],
+          backgroundColor: colors[i % colors.length] + '10',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.4,
+          fill: false,
+        })),
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: '#949BA8', font: { family: "'JetBrains Mono'", size: 10 }, boxWidth: 12, padding: 12 } },
+          tooltip: { mode: 'index', intersect: false, backgroundColor: '#0A0F1A', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleFont: { family: "'JetBrains Mono'" }, bodyFont: { family: "'JetBrains Mono'" } },
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, maxTicksLimit: 8 } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, callback: v => v + '%' }, min: 0, max: 100 },
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      },
+    });
+  }
+}
+renderResistance();
+
+// ── Close Section ──
+function renderClose() {
+  $('close-content').innerHTML = `
+    <h2 class="close-text reveal">Built for Africa.<br>Built for the world.</h2>
+    <p class="close-sub reveal">Sentri Intelligence — AMR surveillance that works anywhere, on any device.</p>
+    <div class="close-links reveal">
+      <a href="https://github.com/teaminnovatorx/week02-demo" class="close-link" target="_blank">GitHub</a>
+      <a href="#sec-hero" class="close-link">Back to top</a>
+    </div>
+    <p class="close-footer reveal">STAI v0.2 · Sentri Intelligence · 2026</p>
+  `;
+}
+renderClose();
+
+// Case row reveal animation
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `@keyframes caseReveal { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }`;
+document.head.appendChild(styleSheet);
+
+// ═══════════════════════════════════════════════
+//  Scroll Engine
+// ═══════════════════════════════════════════════
+
+// Reveal on scroll
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
     }
   });
 }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
 
-document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
-  revealObserver.observe(el);
-});
+function initReveals() {
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+}
 
-// Also observe sections for counter triggers
-document.querySelectorAll('.section').forEach(el => revealObserver.observe(el));
-
-// ── Vision word reveal ──
-const visionObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const words = e.target.querySelectorAll('.word');
-      words.forEach((w, i) => {
-        setTimeout(() => w.classList.add('visible'), i * 120);
-      });
-    }
-  });
-}, { threshold: 0.3 });
-
-const visionEl = document.getElementById('vision-text');
-if (visionEl) visionObserver.observe(visionEl);
-
-// ── Section → Orb mode ──
-const orb = document.getElementById('orb');
+// Section detection for Orb mood
 const sectionObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const mode = e.target.dataset.orbMode;
-      orb.classList.remove('alert-mode', 'critical-flash');
-      if (mode === 'alert') orb.classList.add('alert-mode');
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      currentSection = entry.target.dataset.section;
+      setOrbMood(currentSection);
+    }
+  });
+}, { threshold: 0.4 });
+
+document.querySelectorAll('.section[data-section]').forEach(s => sectionObserver.observe(s));
+
+// Aurora mesh parallax
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 30;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 30;
+  const mesh = $('aurora-mesh');
+  if (mesh) {
+    mesh.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+  }
+});
+
+// Crisis counter animation on reveal
+const crisisObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const counter = $('crisis-counter');
+      if (counter && !counter.dataset.animated) {
+        counter.dataset.animated = '1';
+        animateCounter(counter, 1.27, 'M', 2500);
+      }
+      // Animate stat cards
+      entry.target.querySelectorAll('.stat-value[data-count]').forEach(el => {
+        if (!el.dataset.animated) {
+          el.dataset.animated = '1';
+          animateCounter(el, parseInt(el.dataset.count), '', 1800);
+        }
+      });
+      crisisObserver.unobserve(entry.target);
     }
   });
 }, { threshold: 0.3 });
 
-document.querySelectorAll('.section[data-orb-mode]').forEach(el => sectionObserver.observe(el));
-
-// ── Hero particles ──
-(function initParticles() {
-  const canvas = document.getElementById('hero-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let w, h, particles = [];
-
-  function resize() {
-    w = canvas.width = canvas.offsetWidth;
-    h = canvas.height = canvas.offsetHeight;
-  }
-
-  function createParticles() {
-    particles = Array.from({length: 80}, () => ({
-      x: Math.random() * w, y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 2 + 0.5, a: Math.random() * 0.3 + 0.1
-    }));
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
-      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(45, 212, 191, ${p.a})`;
-      ctx.fill();
-    });
-    // Draw connections
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 120) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(45, 212, 191, ${0.06 * (1 - dist/120)})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
-    requestAnimationFrame(draw);
-  }
-
-  resize(); createParticles(); draw();
-  window.addEventListener('resize', () => { resize(); createParticles(); });
-})();
-
-// ── Aurora mesh parallax ──
-document.addEventListener('mousemove', (e) => {
-  const x = (e.clientX / window.innerWidth - 0.5) * 30;
-  const y = (e.clientY / window.innerHeight - 0.5) * 30;
-  document.querySelectorAll('.aurora-blob').forEach((blob, i) => {
-    const factor = (i + 1) * 0.5;
-    blob.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
-  });
-});
-
-// ── D3 Map ──
-async function initMap() {
-  const container = document.getElementById('map-container');
-  const tooltip = document.getElementById('map-tooltip');
-  if (!container) return;
-
-  const width = container.offsetWidth;
-  const height = container.offsetHeight || width / 1.3;
-
-  const svg = d3.select(container).append('svg')
-    .attr('viewBox', `0 0 ${width} ${height}`)
-    .attr('preserveAspectRatio', 'xMidYMid meet');
-
-  const projection = d3.geoNaturalEarth1()
-    .center([20, 0])
-    .scale(width / 2.2)
-    .translate([width / 2, height / 2]);
-
-  const path = d3.geoPath().projection(projection);
-
-  try {
-    const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json());
-    const land = topojson.feature(world, world.objects.land);
-
-    svg.append('path')
-      .datum(land)
-      .attr('d', path)
-      .attr('fill', '#0B1424')
-      .attr('stroke', '#1a2540')
-      .attr('stroke-width', 0.5);
-  } catch(e) {
-    // Fallback: simple background
-    svg.append('rect').attr('width', width).attr('height', height).attr('fill', '#0B1424');
-  }
-
-  // District points
-  const featMap = {};
-  DISTRICTS.forEach(d => {
-    const coords = DISTRICT_COORDS[d.district];
-    if (!coords) return;
-    const pos = projection(coords);
-    if (!pos) return;
-    featMap[d.district] = { ...d, x: pos[0], y: pos[1] };
-  });
-
-  // Arcs
-  const arcsGroup = svg.append('g');
-  ARC_PAIRS.forEach(([a, b]) => {
-    const f1 = featMap[a], f2 = featMap[b];
-    if (!f1 || !f2) return;
-    const midX = (f1.x + f2.x) / 2;
-    const midY = (f1.y + f2.y) / 2 - 30;
-    arcsGroup.append('path')
-      .attr('d', `M${f1.x},${f1.y} Q${midX},${midY} ${f2.x},${f2.y}`)
-      .attr('fill', 'none')
-      .attr('stroke', 'rgba(45,212,191,0.08)')
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '4,4');
-  });
-
-  // Points
-  const pointsGroup = svg.append('g');
-  Object.values(featMap).forEach(f => {
-    const g = pointsGroup.append('g')
-      .attr('transform', `translate(${f.x},${f.y})`)
-      .style('cursor', 'pointer');
-
-    // Glow
-    g.append('circle')
-      .attr('r', Math.max(6, f.avg_resistance_pct / 5))
-      .attr('fill', resColor(f.avg_resistance_pct))
-      .attr('opacity', 0.15)
-      .attr('filter', 'blur(4px)');
-
-    // Core
-    g.append('circle')
-      .attr('r', Math.max(3, f.avg_resistance_pct / 8))
-      .attr('fill', resColor(f.avg_resistance_pct))
-      .attr('opacity', 0.8);
-
-    // Label
-    g.append('text')
-      .attr('x', 0)
-      .attr('y', -Math.max(6, f.avg_resistance_pct / 5) - 6)
-      .attr('text-anchor', 'middle')
-      .attr('fill', '#949BA8')
-      .attr('font-size', '9px')
-      .attr('font-family', "'Syne', sans-serif")
-      .text(f.district);
-
-    // Tooltip
-    g.on('mouseenter', (event) => {
-      const drugRows = f.drugs.slice(0, 4).map(d =>
-        `<div class="drug-row"><span class="drug-name">${d.drug}</span><span class="drug-pct" style="color:${resColor(d.resistance_pct)}">${d.resistance_pct}%</span></div>`
-      ).join('');
-      tooltip.innerHTML = `
-        <h4>${f.district} <span class="muted" style="font-weight:400;font-size:11px">${f.region}</span></h4>
-        <div style="font-family:var(--font-mono);font-size:20px;color:${resColor(f.avg_resistance_pct)};margin:8px 0">${f.avg_resistance_pct}%</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">avg resistance</div>
-        ${drugRows}
-      `;
-      tooltip.classList.add('active');
-      const rect = container.getBoundingClientRect();
-      tooltip.style.left = (f.x + 20) + 'px';
-      tooltip.style.top = (f.y - 20) + 'px';
-    });
-
-    g.on('mouseleave', () => tooltip.classList.remove('active'));
-  });
-}
-
-// ── Render Alerts ──
-function renderAlerts() {
-  const grid = document.getElementById('alerts-grid');
-  if (!grid) return;
-  grid.innerHTML = ALERTS.map((a, i) => `
-    <div class="alert-card glass ${a.severity} reveal ${i % 2 === 0 ? 'reveal-left' : 'reveal-right'} delay-${Math.min(i % 3 + 1, 6)}">
-      <div class="alert-header">
-        <div class="alert-dot"></div>
-        <div class="alert-title">${a.title}</div>
-      </div>
-      <div class="alert-message">${a.message}</div>
-      <div class="alert-meta">
-        <span class="alert-tag">${a.district}</span>
-        <span class="alert-tag">${a.drug}</span>
-        <span class="alert-time">${a.time}</span>
-      </div>
-    </div>
-  `).join('');
-  // Re-observe new elements
-  grid.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => revealObserver.observe(el));
-}
-
-// ── Render Cases ──
-function renderCases() {
-  const body = document.getElementById('cases-body');
-  if (!body) return;
-  body.innerHTML = CASES.map(c => `
-    <tr>
-      <td><span class="case-id">${c.id}</span></td>
-      <td><span class="source-badge ${c.source}">${c.source}</span></td>
-      <td><span class="complaint-text">${c.complaint}</span></td>
-      <td class="hide-mobile"><span class="district-tag">${c.district}</span></td>
-      <td class="hide-mobile">
-        <span class="severity-badge">
-          <span class="severity-dot ${c.severity}"></span>
-          ${c.severity}
-        </span>
-      </td>
-      <td class="hide-mobile" style="font-size:11px;color:var(--text-dim)">${c.age}y ${c.sex === 'male' ? 'M' : 'F'}</td>
-      <td><span class="time-ago">${c.time}</span></td>
-    </tr>
-  `).join('');
-}
-
-// ── Render Resistance Bars ──
-function renderResistanceBars() {
-  const container = document.getElementById('resistance-bars');
-  if (!container) return;
-  container.innerHTML = DRUG_RESISTANCE.map(d => `
-    <div class="drug-bar-row">
-      <span class="drug-name">${d.drug}</span>
-      <div class="drug-bar-track">
-        <div class="drug-bar-fill" data-width="${d.pct}%" style="background: ${resColor(d.pct)};"></div>
-      </div>
-      <span class="drug-pct" style="color: ${resColor(d.pct)}">${d.pct}%</span>
-    </div>
-  `).join('');
-}
-
-// ── Trend Chart (Chart.js) ──
-function initTrendChart() {
-  const canvas = document.getElementById('trend-chart');
-  if (!canvas) return;
-
-  const labels = TREND_DATES.map(d => d.slice(5)); // MM-DD
-  const datasets = Object.entries(TREND_SERIES).map(([label, data], i) => ({
-    label,
-    data,
-    borderColor: TREND_COLORS[i],
-    backgroundColor: TREND_COLORS[i] + '15',
-    borderWidth: 1.5,
-    pointRadius: 0,
-    pointHoverRadius: 4,
-    tension: 0.4,
-    fill: false
-  }));
-
-  new Chart(canvas, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, boxWidth: 12, padding: 12 }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(6,9,15,0.92)',
-          borderColor: 'rgba(255,255,255,0.06)',
-          borderWidth: 1,
-          titleFont: { family: "'Syne'", size: 11 },
-          bodyFont: { family: "'JetBrains Mono'", size: 10 },
-          titleColor: '#EEF0F4',
-          bodyColor: '#949BA8',
-          padding: 12,
-          cornerRadius: 8,
-          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%` }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.03)' },
-          ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, maxTicksLimit: 8 }
-        },
-        y: {
-          grid: { color: 'rgba(255,255,255,0.03)' },
-          ticks: { color: '#5A6170', font: { family: "'JetBrains Mono'", size: 9 }, callback: v => v + '%' },
-          min: 0, max: 100
-        }
-      }
+// Vision word reveal
+const visionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.word').forEach((w, i) => {
+        setTimeout(() => w.classList.add('visible'), i * 80);
+      });
+      visionObserver.unobserve(entry.target);
     }
   });
+}, { threshold: 0.3 });
+
+function initSectionObservers() {
+  const crisisEl = $('sec-crisis');
+  if (crisisEl) crisisObserver.observe(crisisEl);
+  const visionEl = $('sec-vision');
+  if (visionEl) visionObserver.observe(visionEl);
 }
 
-// ── Init everything ──
+// Hide scroll indicator on scroll
+let scrollIndicatorHidden = false;
+window.addEventListener('scroll', () => {
+  if (!scrollIndicatorHidden && window.scrollY > 100) {
+    const si = $('scroll-indicator');
+    if (si) si.style.opacity = '0';
+    scrollIndicatorHidden = true;
+  }
+}, { passive: true });
+
+// ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
-  renderAlerts();
-  renderCases();
-  renderResistanceBars();
-  initMap();
-  initTrendChart();
+  initReveals();
+  initSectionObservers();
+  console.log('[STAI] Initialized');
 });
+
+console.log('[STAI] Core loaded');
 </script>
+
 </body>
 </html>
